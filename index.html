@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="icon" type="image/svg+xml" href="./favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<script src="./image-slot.js"></script>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#171513;color:#ece8e1;}
+a{color:#ece8e1;text-decoration:underline;}a:hover{color:oklch(0.66 0.2 25);}
+*{box-sizing:border-box;}
+@keyframes recBlink{0%,45%{opacity:1;box-shadow:0 0 6px 1px rgba(232,40,40,.75);}55%,100%{opacity:.15;box-shadow:none;}}
+</style>
+</helmet>
+<div ref="{{ rootRef }}" onPointerDown="{{ onDown }}" style="position:fixed;inset:0;overflow:hidden;cursor:{{ cursor }};user-select:none;touch-action:none;background:radial-gradient(ellipse at center,#1f1c19 0%,#141210 75%);font-family:'IBM Plex Mono',monospace;">
+
+  <div ref="{{ worldRef }}" style="position:absolute;left:0;top:0;transform-origin:0 0;transform:{{ worldTf }};transition:{{ worldTr }};">
+    <sc-for list="{{ regions }}" as="rg" hint-placeholder-count="3">
+      <div data-cat="{{ rg.idx }}" style="position:absolute;left:0;top:0;transform:{{ rg.tf }};width:{{ rg.w }}px;height:{{ rg.h }}px;border:2px solid #3a342e;border-radius:28px;opacity:{{ rg.op }};transition:opacity .6s;cursor:pointer;">
+        <div style="position:absolute;left:60px;bottom:100%;padding-bottom:30px;display:flex;align-items:baseline;gap:40px;white-space:nowrap;opacity:{{ rg.hOp }};transition:opacity .5s;">
+          <span style="font-family:'Instrument Serif',serif;font-style:italic;font-size:260px;line-height:.9;color:#ece8e1;" style-hover="color:oklch(0.66 0.2 25)">{{ rg.name }}</span>
+          <span style="font-size:48px;letter-spacing:.14em;color:#a39b8f;">{{ rg.num }} · {{ rg.sub }}</span>
+        </div>
+      </div>
+    </sc-for>
+    <sc-for list="{{ islands }}" as="isl" hint-placeholder-count="3">
+      <div data-col="{{ isl.id }}" style="position:absolute;left:0;top:0;transform:{{ isl.tf }};width:1200px;text-align:center;cursor:pointer;opacity:{{ isl.op }};pointer-events:{{ isl.pe }};transition:opacity .6s;">
+        <div style="font-size:40px;letter-spacing:.16em;color:#a39b8f;">{{ isl.count }} PHOTOGRAPHS</div>
+        <div style="font-family:'Instrument Serif',serif;font-size:120px;line-height:1.05;color:#ece8e1;" style-hover="color:oklch(0.66 0.2 25)">{{ isl.name }}</div>
+      </div>
+    </sc-for>
+    <sc-for list="{{ photos }}" as="p" hint-placeholder-count="12">
+      <div data-pid="{{ p.id }}" style="position:absolute;left:0;top:0;width:{{ p.w }}px;transform:{{ p.tf }};transform-origin:0 0;backface-visibility:hidden;opacity:{{ p.op }};z-index:{{ p.zi }};transition:transform .8s cubic-bezier(.22,1,.36,1),opacity .5s;cursor:pointer;">
+        <div style="background:{{ frameBg }};padding:{{ framePad }};box-shadow:0 8px 0 rgba(0,0,0,.25);">
+          <div style="position:relative;width:100%;aspect-ratio:{{ p.ar }};background:#2a2622;pointer-events:{{ p.pe }};">
+            <sc-if value="{{ p.showImg }}" hint-placeholder-val="{{ false }}"><img ref="{{ p.imgRef }}" alt="{{ p.title }}" decoding="async" draggable="false" onClick="{{ p.zoom }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;cursor:zoom-in;"></sc-if>
+            <sc-if value="{{ p.noSrc }}" hint-placeholder-val="{{ true }}"><image-slot id="{{ p.slot }}" shape="rect" placeholder="{{ p.ph }}"></image-slot></sc-if>
+          </div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="position:absolute;top:clamp(18px,4vw,28px);left:clamp(18px,4vw,32px);pointer-events:none;">
+    <div style="font-family:'Instrument Serif',serif;font-size:clamp(26px,6.5vw,34px);line-height:1;">Kaylee’s Studio</div>
+    <div style="font-size:11px;letter-spacing:.18em;color:#8f877c;margin-top:8px;">PHOTOGRAPHS 2019 — 2026</div>
+  </div>
+  <div data-panel="1" style="position:absolute;top:clamp(84px,20vw,96px);left:clamp(18px,4vw,32px);width:min(230px,calc(100vw - 36px));display:flex;flex-direction:column;gap:18px;cursor:default;opacity:{{ tagsBtnOp }};transition:opacity .4s;">
+    <button onClick="{{ toggleTags }}" style="align-self:flex-start;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;background:transparent;color:#ece8e1;border:1px solid #3a352f;border-radius:999px;padding:8px 14px;cursor:pointer;" style-hover="border-color:#ece8e1">{{ tagsLabel }}</button>
+    <sc-if value="{{ showTags }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:12px;padding:14px;max-height:calc(100dvh - 300px);overflow-y:auto;touch-action:pan-y;scrollbar-width:thin;background:rgba(23,21,19,.94);border:1px solid #2e2a26;border-radius:16px;">
+        <div style="font-size:11px;letter-spacing:.14em;color:oklch(0.66 0.2 25);">{{ matchText }}</div>
+        <sc-for list="{{ tagGroups }}" as="g" hint-placeholder-count="5">
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div style="font-size:10px;letter-spacing:.18em;color:#6f675d;">{{ g.label }}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;">
+              <sc-for list="{{ g.tags }}" as="t" hint-placeholder-count="2">
+                <button onClick="{{ t.toggle }}" style="font-family:'IBM Plex Mono',monospace;font-size:12px;border:1px solid {{ t.bd }};border-radius:999px;padding:4px 9px;cursor:pointer;background:{{ t.bg }};color:{{ t.fg }};display:flex;gap:6px;align-items:baseline;transition:background .2s,color .2s;">{{ t.label }}<span style="font-size:10px;opacity:.6;">{{ t.count }}</span></button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+        <sc-if value="{{ filt }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ clearTags }}" style="align-self:flex-start;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;background:transparent;color:#8f877c;border:0;padding:0;cursor:pointer;text-decoration:underline;" style-hover="color:#ece8e1">Clear all · Esc</button>
+        </sc-if>
+      </div>
+    </sc-if>
+  </div>
+  <div style="position:absolute;top:clamp(18px,4vw,28px);right:clamp(18px,4vw,32px);display:flex;flex-direction:column;align-items:flex-end;gap:12px;">
+    <button onClick="{{ toStudio }}" data-panel="1" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;background:rgba(23,21,19,.94);color:#ece8e1;border:1px solid #3a352f;border-radius:999px;padding:9px 16px;cursor:pointer;display:flex;gap:8px;align-items:center;" style-hover="border-color:#ece8e1"><span style="width:7px;height:7px;border-radius:50%;background:#e02828;animation:recBlink 1.2s steps(1,end) infinite;"></span>{{ studioLabel }}</button>
+    <div style="font-size:11px;letter-spacing:.14em;color:#8f877c;text-align:right;line-height:1.8;pointer-events:none;">
+    <sc-if value="{{ showHints }}" hint-placeholder-val="{{ true }}"><div>DRAG TO WANDER</div><div>{{ hintZoom }}</div><div>{{ hintClick }}</div></sc-if>
+    </div>
+  </div>
+
+  <div style="position:absolute;left:50%;bottom:28px;transform:translateX(-50%);max-width:calc(100vw - 48px);display:flex;flex-direction:column;align-items:center;gap:8px;opacity:{{ navOp }};pointer-events:{{ navPe }};transition:opacity .4s;">
+    <sc-if value="{{ hasSub }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;gap:4px;padding:4px;background:{{ tabBar.bg }};border:1px solid {{ tabBar.bd }};box-shadow:{{ tabBar.sh }};backdrop-filter:{{ tabBar.bf }};-webkit-backdrop-filter:{{ tabBar.bf }};border-radius:999px;max-width:100%;overflow-x:auto;scrollbar-width:none;touch-action:pan-x;transition:background .3s,box-shadow .3s;">
+        <sc-for list="{{ subnav }}" as="n" hint-placeholder-count="3">
+          <button onClick="{{ n.go }}" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.06em;border:0;border-radius:999px;padding:8px 14px;cursor:pointer;background:{{ n.bg }};color:{{ n.fg }};box-shadow:{{ n.sh }};display:flex;gap:8px;align-items:baseline;white-space:nowrap;transition:background .25s,box-shadow .25s,color .25s;">{{ n.label }}<span style="font-size:10px;opacity:.6;">{{ n.count }}</span></button>
+        </sc-for>
+      </div>
+    </sc-if>
+    <div style="display:flex;gap:4px;padding:6px;background:{{ tabBar.bg }};border:1px solid {{ tabBar.bd }};box-shadow:{{ tabBar.sh }};backdrop-filter:{{ tabBar.bf }};-webkit-backdrop-filter:{{ tabBar.bf }};border-radius:999px;max-width:100%;overflow-x:auto;scrollbar-width:none;touch-action:pan-x;transition:background .3s,box-shadow .3s;">
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="4">
+        <button onClick="{{ n.go }}" style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.06em;border:0;border-radius:999px;padding:10px 18px;cursor:pointer;background:{{ n.bg }};color:{{ n.fg }};box-shadow:{{ n.sh }};display:flex;gap:8px;align-items:baseline;white-space:nowrap;transition:background .25s,box-shadow .25s,color .25s;">{{ n.label }}<span style="font-size:10px;opacity:.6;">{{ n.count }}</span></button>
+      </sc-for>
+    </div>
+  </div>
+
+  <div data-panel="1" onClick="{{ miniClick }}" style="position:absolute;right:28px;bottom:28px;width:{{ mini.w }}px;height:{{ mini.h }}px;background:rgba(23,21,19,.94);border:1px solid #2e2a26;cursor:crosshair;overflow:hidden;opacity:{{ miniOp }};pointer-events:{{ miniPe }};transition:opacity .4s;">
+    <sc-for list="{{ mini.dots }}" as="d" hint-placeholder-count="0">
+      <div style="position:absolute;left:{{ d.x }}px;top:{{ d.y }}px;width:{{ d.w }}px;height:{{ d.h }}px;background:{{ d.c }};"></div>
+    </sc-for>
+    <div style="position:absolute;left:{{ mini.vx }}px;top:{{ mini.vy }}px;width:{{ mini.vw }}px;height:{{ mini.vh }}px;border:1px solid oklch(0.66 0.2 25);pointer-events:none;"></div>
+  </div>
+
+  <sc-if value="{{ zoomOpen }}" hint-placeholder-val="{{ false }}">
+    <div data-panel="1" ref="{{ zoomRef }}" style="position:fixed;inset:0;z-index:50;background:rgba(12,11,10,.97);overflow:hidden;cursor:grab;touch-action:none;user-select:none;">
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:72px 24px;box-sizing:border-box;">
+        <img data-zimg="1" data-src="{{ zoomSrc }}" alt="{{ zoomTitle }}" draggable="false" style="display:block;max-width:100%;max-height:100%;object-fit:contain;transform-origin:center;will-change:transform;">
+      </div>
+      <div style="position:absolute;top:0;left:0;right:0;padding:24px 28px 40px;display:flex;align-items:center;gap:16px;pointer-events:none;background:linear-gradient(rgba(12,11,10,.92),rgba(12,11,10,.6) 60%,rgba(12,11,10,0));">
+        <div style="font-family:'Instrument Serif',serif;font-size:26px;line-height:1;color:#ece8e1;">{{ zoomTitle }}</div>
+        <div style="font-size:11px;letter-spacing:.14em;color:#8f877c;margin-left:auto;text-align:right;">{{ zoomHint }}</div>
+      </div>
+      <div data-zui="1" style="position:absolute;bottom:24px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:4px;padding:4px;background:rgba(23,21,19,.94);border:1px solid #2e2a26;border-radius:999px;cursor:default;">
+        <button onClick="{{ zoomOut }}" style="font-family:'IBM Plex Mono',monospace;font-size:14px;width:40px;height:40px;border:0;border-radius:999px;background:transparent;color:#ece8e1;cursor:pointer;" style-hover="background:#2e2a26">−</button>
+        <span data-zpct="1" style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#b8b0a4;min-width:52px;text-align:center;">100%</span>
+        <button onClick="{{ zoomIn }}" style="font-family:'IBM Plex Mono',monospace;font-size:14px;width:40px;height:40px;border:0;border-radius:999px;background:transparent;color:#ece8e1;cursor:pointer;" style-hover="background:#2e2a26">+</button>
+        <button onClick="{{ zoomFit }}" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;height:40px;padding:0 14px;border:0;border-radius:999px;background:transparent;color:#ece8e1;cursor:pointer;" style-hover="background:#2e2a26">FIT</button>
+        <button onClick="{{ closeZoom }}" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;height:40px;padding:0 16px;border:0;border-radius:999px;background:#ece8e1;color:#171513;cursor:pointer;">× CLOSE</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ hasFocus }}" hint-placeholder-val="{{ false }}">
+    <div data-panel="1" ref="{{ fpRef }}" style="position:absolute;top:{{ fpS.top }};left:{{ fpS.left }};right:0;bottom:0;width:{{ fpS.w }};max-height:{{ fpS.mh }};padding:{{ fpS.pad }};display:flex;flex-direction:column;gap:{{ fpS.gap }};background:{{ fpS.bg }};border-top:{{ fpS.bt }};border-radius:{{ fpS.br }};overflow-y:auto;touch-action:pan-y;cursor:default;">
+      <div style="font-size:11px;letter-spacing:.18em;color:#8f877c;">{{ fp.colName }} · {{ fp.pos }}</div>
+      <div style="font-family:'Instrument Serif',serif;font-size:{{ fpS.tf }};line-height:1;text-wrap:pretty;">{{ fp.title }}</div>
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:10px 18px;font-size:12px;line-height:1.5;">
+        <span style="color:#6f675d;">PLACE</span><span>{{ fp.place }}</span>
+        <span style="color:#6f675d;">YEAR</span><span>{{ fp.year }}</span>
+        <span style="color:#6f675d;">CAMERA</span><span>{{ fp.cam }}</span>
+        <sc-if value="{{ fp.hasFilm }}" hint-placeholder-val="{{ false }}"><span style="color:#6f675d;">FILM</span><span>{{ fp.film }}</span></sc-if>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        <sc-for list="{{ fp.tags }}" as="t" hint-placeholder-count="5">
+          <button onClick="{{ t.go }}" style="font-family:'IBM Plex Mono',monospace;font-size:12px;background:transparent;color:#c9c1b5;border:1px solid #3a352f;border-radius:999px;padding:6px 10px;cursor:pointer;" style-hover="border-color:oklch(0.66 0.2 25);color:oklch(0.66 0.2 25)">{{ t.label }}</button>
+        </sc-for>
+      </div>
+      <sc-if value="{{ fp.hasSrc }}" hint-placeholder-val="{{ false }}"><button onClick="{{ openZoom }}" style="align-self:flex-start;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.06em;background:transparent;color:#ece8e1;border:1px solid #3a352f;border-radius:999px;padding:10px 16px;cursor:pointer;" style-hover="border-color:oklch(0.66 0.2 25);color:oklch(0.66 0.2 25)">⤢ View full size</button></sc-if>
+      <div style="display:flex;gap:8px;margin-top:auto;">
+        <button onClick="{{ prev }}" style="font-family:'IBM Plex Mono',monospace;font-size:12px;background:transparent;color:#ece8e1;border:1px solid #3a352f;border-radius:999px;padding:10px 16px;cursor:pointer;" style-hover="border-color:#ece8e1">← Prev</button>
+        <button onClick="{{ next }}" style="font-family:'IBM Plex Mono',monospace;font-size:12px;background:transparent;color:#ece8e1;border:1px solid #3a352f;border-radius:999px;padding:10px 16px;cursor:pointer;" style-hover="border-color:#ece8e1">Next →</button>
+        <button onClick="{{ close }}" style="font-family:'IBM Plex Mono',monospace;font-size:12px;background:#ece8e1;color:#171513;border:0;border-radius:999px;padding:10px 16px;cursor:pointer;margin-left:auto;">{{ closeLabel }}</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <div style="position:absolute;inset:0;z-index:50;overflow:hidden;background:radial-gradient(ellipse at 50% 52%,#2b2621 0%,#161412 50%,#0c0b0a 100%);opacity:{{ introOp }};pointer-events:{{ introPe }};transition:{{ introTr }};">
+    <div ref="{{ camHost }}" style="position:absolute;inset:0;"></div>
+    <div ref="{{ tipRef }}" style="position:absolute;left:0;top:0;pointer-events:none;transition:opacity .25s;">
+      <div style="position:absolute;left:-60px;top:-62px;width:120px;display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <div style="font-size:10px;letter-spacing:.26em;color:oklch(0.66 0.2 25);white-space:nowrap;">{{ tipLabel }}</div>
+        <div style="width:1px;height:28px;background:oklch(0.66 0.2 25);"></div>
+      </div>
+    </div>
+    <div style="position:absolute;top:clamp(18px,4vw,28px);left:clamp(18px,4vw,32px);pointer-events:none;">
+      <div style="font-family:'Instrument Serif',serif;font-size:clamp(26px,6.5vw,34px);line-height:1;">Kaylee’s Studio</div>
+      <div style="font-size:11px;letter-spacing:.18em;color:#8f877c;margin-top:8px;">PHOTOGRAPHS 2019 — 2026</div>
+    </div>
+    <sc-if value="{{ introHints }}" hint-placeholder-val="{{ true }}"><div style="position:absolute;top:clamp(18px,4vw,28px);right:clamp(18px,4vw,32px);font-size:11px;letter-spacing:.14em;color:#c9c1b5;text-align:right;line-height:1.8;pointer-events:none;padding:10px 14px;background:rgba(13,12,11,.85);border:1px solid #2e2a26;border-radius:12px;">
+      <div>DRAG TO LOOK AROUND</div><div>{{ hintZoom }}</div><div>{{ hintPrint }}</div>
+    </div></sc-if>
+    <div style="position:absolute;left:0;right:0;bottom:0;height:280px;background:linear-gradient(180deg,rgba(13,12,11,0) 0%,rgba(13,12,11,.88) 70%);pointer-events:none;"></div>
+    <div style="position:absolute;top:0;left:0;right:0;height:140px;background:linear-gradient(0deg,rgba(13,12,11,0) 0%,rgba(13,12,11,.6) 100%);pointer-events:none;"></div>
+    <div style="position:absolute;left:0;right:0;bottom:36px;display:flex;flex-direction:column;align-items:center;gap:18px;padding:0 24px;pointer-events:none;">
+      <div style="font-family:'Instrument Serif',serif;font-size:clamp(30px,3.6vw,48px);line-height:1.1;text-align:center;color:#ece8e1;">Press the shutter to <em>enter</em>.</div>
+      <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px;pointer-events:{{ introPe }};">
+        <button data-sfx-skip="1" onClick="{{ fireAll }}" style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.06em;background:#ece8e1;color:#171513;border:0;border-radius:999px;padding:13px 22px;cursor:pointer;display:flex;gap:10px;align-items:center;" style-hover="background:oklch(0.66 0.2 25);--dot:#ffffff"><span style="width:8px;height:8px;border-radius:50%;background:var(--dot, #e02828);animation:recBlink 1.2s steps(1,end) infinite;"></span>All photographs</button>
+        <sc-for list="{{ enterCats }}" as="k" hint-placeholder-count="3">
+          <button data-sfx-skip="1" onClick="{{ k.go }}" style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.06em;background:rgba(23,21,19,.6);color:#ece8e1;border:1px solid #3a352f;border-radius:999px;padding:12px 20px;cursor:pointer;display:flex;gap:8px;align-items:baseline;" style-hover="border-color:#ece8e1">{{ k.label }}<span style="font-size:10px;opacity:.6;">{{ k.count }}</span></button>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <div style="position:absolute;inset:0;z-index:60;background:#121010;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;opacity:{{ loaderOp }};pointer-events:{{ loaderPe }};transition:opacity .9s ease;">
+    <div style="font-size:11px;letter-spacing:.3em;color:#8f877c;">DEVELOPING</div>
+    <div style="font-family:'Instrument Serif',serif;font-size:clamp(120px,22vw,320px);line-height:.8;color:#ece8e1;font-variant-numeric:tabular-nums;" ref="{{ progRef }}">000</div>
+    <div ref="{{ filmRef }}" style="display:flex;gap:4px;padding:8px 10px;border-top:1px dashed #3a352f;border-bottom:1px dashed #3a352f;max-width:calc(100vw - 48px);">
+      <sc-for list="{{ film }}" as="f" hint-placeholder-count="36">
+        <div data-fr="1" style="width:12px;height:18px;border:1px solid #3a352f;background:transparent;border-radius:2px;transition:background .3s,border-color .3s;flex:0 1 12px;"></div>
+      </sc-for>
+    </div>
+    <div style="font-size:11px;letter-spacing:.2em;color:#6f675d;" ref="{{ expRef }}">00 / 36 EXPOSURES</div>
+  </div>
+  
+  <div style="position:absolute;inset:0;z-index:70;pointer-events:none;overflow:hidden;">
+    <div style="position:absolute;left:0;right:0;top:0;height:50.5%;transform:{{ curTop }};transition:{{ curTr }};background:repeating-linear-gradient(180deg,#1b1916 0 30px,#0c0b0a 30px 32px);"></div>
+    <div style="position:absolute;left:0;right:0;bottom:0;height:50.5%;transform:{{ curBot }};transition:{{ curTr }};background:repeating-linear-gradient(180deg,#1b1916 0 30px,#0c0b0a 30px 32px);"></div>
+    <div style="position:absolute;inset:0;background:#fffaf0;opacity:{{ flashOp }};transition:{{ flashTr }};"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;tilt&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:5,&quot;min&quot;:0,&quot;max&quot;:12,&quot;step&quot;:1,&quot;unit&quot;:&quot;°&quot;,&quot;tsType&quot;:&quot;number&quot;},&quot;skipIntro&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;glassTabs&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;sfxVolume&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:0.6,&quot;min&quot;:0,&quot;max&quot;:1,&quot;step&quot;:0.05,&quot;tsType&quot;:&quot;number&quot;}}">
+const U = n => Array.from({ length:n }, (_, i) => 'Untitled ' + String(i+1).padStart(2,'0'));
+const DIGI = ['Sony A7 IV · 35mm','Fujifilm X100V · 23mm','Ricoh GR III · 28mm'];
+const FILM = ['Leica M6 · 35mm · Portra 400','Contax T2 · 38mm · Gold 200','Pentax 67 · 105mm · HP5','Mamiya 7 · 80mm · Ektar 100'];
+const FILM_SHOTS = [
+  { src:'photos/xinjiang-film/01.jpg', title:'Fallen Log', subject:'landscape', w:3318, h:2279 },
+  { src:'photos/xinjiang-film/02.jpg', title:'Herd in the Pines', subject:'landscape', w:3318, h:2279 },
+  { src:'photos/xinjiang-film/03.jpg', title:'Valley Stream', subject:'landscape', w:3318, h:2279 },
+  { src:'photos/xinjiang-film/04.jpg', title:'Spruce and Peaks', subject:'landscape', w:3318, h:2279 },
+  { src:'photos/xinjiang-film/05.jpg', title:'Treeline', subject:'landscape', w:3318, h:2279 },
+  { src:'photos/xinjiang-film/06.jpg', title:'Glacial River', subject:'landscape', w:3318, h:2279 },
+  { src:'photos/xinjiang-film/07.jpg', title:'Lighthouse', subject:'landscape', w:3318, h:2279 },
+  { src:'photos/nyc-film/01.jpg', title:'Snow Path', subject:'street', w:3318, h:2279, place:'newyork', year:2026, cam:'Goodie 35mm Single Use Camera (HK Edition) · f/10', film:'ISO 400 color negative · 35mm C-41 (stock not disclosed)' },
+  { src:'photos/nyc-film/02.jpg', title:'Under the Arch', subject:'street', w:3318, h:2279, place:'newyork', year:2026, cam:'Goodie 35mm Single Use Camera (HK Edition) · f/10', film:'ISO 400 color negative · 35mm C-41 (stock not disclosed)' },
+  { src:'photos/nyc-film/03.jpg', title:'Washington Square', subject:'street', w:3172, h:2179, place:'newyork', year:2026, cam:'Goodie 35mm Single Use Camera (HK Edition) · f/10', film:'ISO 400 color negative · 35mm C-41 (stock not disclosed)' },
+  { src:'photos/cancun-film/01.jpg', title:'Sunset Bay', subject:'landscape', w:3176, h:2181, place:'cancun', year:2026, cam:'Goodie 35mm Single Use Camera (HK Edition) · f/10', film:'ISO 400 color negative · 35mm C-41 (stock not disclosed)' },
+  { src:'photos/cancun-film/02.jpeg', title:'Beach Umbrella', subject:'landscape', w:3318, h:2279, place:'cancun', year:2026, cam:'Goodie 35mm Single Use Camera (HK Edition) · f/10', film:'ISO 400 color negative · 35mm C-41 (stock not disclosed)' },
+];
+const IXY = 'Canon IXY DIGITAL 210 IS (PowerShot SD780 IS / IXUS 100 IS) · 33–100mm equiv. f/3.2–5.8';
+const LA_SHOTS = [
+  { src:'photos/la-digital/01.jpg', title:'Hollywood Boulevard', subject:'street', w:4000, h:3000 },
+  { src:'photos/la-digital/02.jpg', title:'Crossroads of the World', subject:'street', w:4000, h:3000 },
+  { src:'photos/la-digital/03.jpg', title:'Ben Soleiman Corner', subject:'street', w:3910, h:2932 },
+  { src:'photos/la-digital/04.jpg', title:'Hollywood & Highland', subject:'street', w:3000, h:4000 },
+  { src:'photos/la-digital/05.jpg', title:'Geffen Galleries', subject:'street', w:4000, h:2667 },
+  { src:'photos/la-digital/06.jpg', title:'Geffen Galleries', subject:'street', w:2250, h:4000 },
+].map(s => ({ ...s, place:'losangeles', year:2026, cam:IXY, medium:'digital' }));
+const CS_SHOTS = [
+  { src:'photos/changsha-digital/01.jpg', title:'Night Market', subject:'street', w:3024, h:4031, place:'changsha', year:2026, cam:'Apple iPhone 17 Pro Max', medium:'digital' },
+];
+const NY_SHOTS = [
+  ['Through the Grid', 'street', 3165, 2114],
+  ['The Vessel Reflection', 'street', 4240, 2832],
+  ['Ribs in Light', 'street', 3753, 2507],
+  ['Oculus', 'street', 4240, 2832],
+  ['The Spine', 'street', 2698, 4040],
+  ['Black & White', 'street', 4240, 2832],
+  ['The Spine', 'street', 2734, 4094],
+  ['Lines in Downtown', 'street', 4240, 2832],
+  ['Oculus', 'street', 4240, 2832],
+  ['Snow Path', 'landscape', 4240, 2832],
+  ['Snowmen', 'landscape', 4240, 2832],
+  ['Statue in Snow', 'street', 2664, 3991],
+  ['Square After Snowfall', 'landscape', 4240, 2832],
+].map(([title, subject, w, h], i) => ({ src:`photos/nyc-digital/${String(i+1).padStart(2,'0')}.jpg`, title, subject, w, h, place:'newyork', year:2026, cam:'Sony ZV-E1', medium:'digital' }))
+ .concat([{ src:'photos/nyc-digital/14.jpeg', title:'Golden Hour Downtown', subject:'landscape', w:3024, h:4032, place:'newyork', year:2025, cam:'Apple iPhone 17 Pro Max', medium:'digital' }])
+ .concat([
+  ['Blossom Cluster', 4240, 2832], ['Rain on Petals', 4240, 2832], ['Cherries', 4240, 2832], ['Cardinal in Bloom', 1906, 1273], ['Canopy', 4240, 2832],
+ ].map(([title, w, h], i) => ({ src:`photos/nyc-digital/${15+i}.jpg`, title, subject:'landscape', w, h, place:'newyork', year:2025, cam:'Sony ZV-E1', medium:'digital' })))
+ .concat([['20.jpg','Golden Archer'],['21.jpeg','Ugolino and His Sons']].map(([f, title]) => ({ src:`photos/nyc-digital/${f}`, title, subject:'street', w:3024, h:4032, place:'newyork', year:2024, cam:'Apple iPhone 17 Pro Max', medium:'digital' })));
+const XJ_SHOTS = [
+  ['Painted Hills', 'landscape', 1616, 1080], ['Flock on the Road', 'landscape', 1616, 1080], ['S101', 'landscape', 1616, 1080], ['Braided River', 'landscape', 1286, 859],
+  ['Snowmelt Stream', 'landscape', 1616, 1080], ['Roadside Valley', 'landscape', 1616, 1080], ['Meadow and Tents', 'landscape', 1616, 1080], ['Horses on the Ridge', 'landscape', 1616, 1080],
+  ['Spruce Cones', 'landscape', 1616, 1080], ['Grazing Hills', 'landscape', 1616, 1080], ['Yurt Village', 'landscape', 1616, 1080], ['Mountain Pass', 'landscape', 1616, 1080],
+  ['Sayram Shore', 'street', 1572, 1051], ['Lakeside Lounge', 'street', 1616, 1080],
+].map(([title, subject, w, h], i) => ({ src:`photos/xinjiang-digital/${String(i+1).padStart(2,'0')}.jpg`, title, subject, w, h, place:'xinjiang', year:2025, cam:'Sony ZV-E1', medium:'digital' }));
+const DL_SHOTS = [
+  { src:'photos/dali-digital/01.jpeg', title:'Erhai Sunset', subject:'landscape', w:3024, h:4032, place:'dali', year:2024, cam:'Apple iPhone 14 Pro Max', medium:'digital' },
+  { src:'photos/dali-digital/02.jpg', title:'Gull at Sunrise', subject:'landscape', w:994, h:1487, place:'dali', year:2024, cam:'Sony ZV-E1', medium:'digital' },
+];
+const TK_SHOTS = [
+  { src:'photos/tokyo-digital/01.jpg', title:'Hozomon Gate', subject:'street', w:1048, h:1568, place:'tokyo', year:2025, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/tokyo-digital/02.jpg', title:'Fruit Sandos', subject:'street', w:1357, h:907, place:'tokyo', year:2024, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/tokyo-digital/03.jpg', title:'Toward Hozomon', subject:'street', w:1080, h:1616, place:'tokyo', year:2024, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/tokyo-digital/04.jpg', title:'Asakusa Pagoda', subject:'street', w:902, h:1350, place:'tokyo', year:2024, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/tokyo-digital/05.jpg', title:'Plum Blossoms', subject:'landscape', w:1616, h:1080, place:'tokyo', year:2024, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/tokyo-digital/06.jpg', title:'Festival Banners', subject:'street', w:1033, h:1546, place:'tokyo', year:2024, cam:'Sony ZV-E1', medium:'digital' },
+];
+const OS_SHOTS = [
+  { src:'photos/osaka-digital/01.jpg', title:'Glico Wall', subject:'street', w:1080, h:1616, place:'osaka', year:2024, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/osaka-digital/02.jpg', title:'Crab Sign, Dotonbori', subject:'street', w:1555, h:1039, place:'osaka', year:2024, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/osaka-digital/03b.jpg', title:'Window Seat', subject:'landscape', w:2633, h:2633, place:'osaka', year:2019, cam:'Apple iPhone 7 Plus', medium:'digital' },
+];
+const KY_SHOTS = [
+  { src:'photos/kyoto-digital/01.jpg', title:'Pagoda in Green', subject:'street', w:994, h:1487, place:'kyoto', year:2024, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/kyoto-digital/02.jpg', title:'Forest Platform', subject:'landscape', w:1280, h:1898, place:'kyoto', year:2024, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/kyoto-digital/03.jpg', title:'Hydrangea Basin', subject:'landscape', w:1280, h:1898, place:'kyoto', year:2024, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/kyoto-digital/04.jpg', title:'Ohara Lantern', subject:'street', w:1280, h:1898, place:'kyoto', year:2024, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/kyoto-digital/05.jpg', title:'Platform 4', subject:'street', w:1274, h:1906, place:'kyoto', year:2024, cam:'Sony ZV-E1', medium:'digital' },
+];
+const WH_SHOTS = [
+  { src:'photos/wuhan-digital/01.jpg', title:'Window Tulips', subject:'landscape', w:3024, h:4032, place:'wuhan', year:2024, cam:'Apple iPhone 14 Pro Max', medium:'digital' },
+  { src:'photos/wuhan-digital/02.jpg', title:'Tulip Field', subject:'landscape', w:3028, h:4037, place:'wuhan', year:2024, cam:'Apple iPhone 14 Pro Max', medium:'digital' },
+];
+const SH_SHOTS = [
+  { src:'photos/shanghai-digital/01.jpg', title:'Bamboo Wall', subject:'landscape', w:2832, h:4240, place:'shanghai', year:2024, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/shanghai-digital/02.jpg', title:'Garden Pond', subject:'landscape', w:4240, h:2832, place:'shanghai', year:2024, cam:'Sony ZV-E1', medium:'digital' },
+];
+const WX_SHOTS = [
+  { src:'photos/wuxi-digital/01.jpg', title:'Moon Gate', subject:'street', w:1080, h:1616, place:'wuxi', year:2023, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/wuxi-digital/02.jpg', title:'Orchid on Stone', subject:'landscape', w:1080, h:1616, place:'wuxi', year:2023, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/wuxi-digital/03.jpg', title:'Nianhua Tower', subject:'people', w:1616, h:1080, place:'wuxi', year:2023, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/wuxi-digital/04.jpg', title:'Nianhua Tower', subject:'people', w:1080, h:1616, place:'wuxi', year:2023, cam:'Sony ZV-E1', medium:'digital' },
+];
+const SZ_SHOTS = [
+  { src:'photos/suzhou-digital/01.jpg', title:'Bamboo Shadows', subject:'street', w:827, h:1237, place:'suzhou', year:2023, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/suzhou-digital/02.jpg', title:'Cat at the Water', subject:'street', w:1337, h:893, place:'suzhou', year:2023, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/suzhou-digital/03.jpg', title:'Yellow Moon Gate', subject:'street', w:813, h:1216, place:'suzhou', year:2023, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/suzhou-digital/04.jpg', title:'Cat Below the Window', subject:'street', w:985, h:1473, place:'suzhou', year:2023, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/suzhou-digital/05.jpg', title:'Lotus Window', subject:'street', w:1024, h:1533, place:'suzhou', year:2023, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/suzhou-digital/06.jpg', title:'Napping Cat', subject:'street', w:1080, h:1616, place:'suzhou', year:2023, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/suzhou-digital/07.jpg', title:'Yellow Arch', subject:'street', w:1041, h:1558, place:'suzhou', year:2023, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/suzhou-digital/08.jpg', title:'Pavilion Reflection', subject:'landscape', w:1080, h:1616, place:'suzhou', year:2023, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/suzhou-digital/09.jpg', title:'Corridor Branches', subject:'landscape', w:1009, h:1510, place:'suzhou', year:2023, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/suzhou-digital/10.jpg', title:'Wancui Gate', subject:'street', w:1080, h:1616, place:'suzhou', year:2023, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/suzhou-digital/11.jpg', title:'Bamboo Pergola', subject:'street', w:974, h:1458, place:'suzhou', year:2023, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/suzhou-digital/12.jpg', title:'Garden Pond', subject:'landscape', w:1080, h:1440, place:'suzhou', year:2023, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/suzhou-digital/13.jpg', title:'Canal Houses', subject:'street', w:1080, h:1616, place:'suzhou', year:2023, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/suzhou-digital/14.jpg', title:'Chairs by the Canal', subject:'street', w:1080, h:1616, place:'suzhou', year:2023, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/suzhou-digital/15.jpg', title:'Pagoda in Frame', subject:'street', w:958, h:1433, place:'suzhou', year:2023, cam:'Sony ZV-E1', medium:'digital' },
+];
+const HK_SHOTS = [
+  { src:'photos/hongkong-digital/01.jpg', title:'Staunton Street', subject:'street', w:1080, h:1616, place:'hongkong', year:2023, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/hongkong-digital/02.jpg', title:'Harbourfront Wheel', subject:'street', w:1080, h:1616, place:'hongkong', year:2023, cam:'Sony ZV-E1', medium:'digital' },
+];
+const SZN_SHOTS = [
+  { src:'photos/shenzhen-digital/01.jpg', title:'Valkyrie', subject:'street', w:986, h:1475, place:'shenzhen', year:2023, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/shenzhen-digital/02.jpg', title:'Misty Bay', subject:'landscape', w:4031, h:2687, place:'shenzhen', year:2022, cam:'Apple iPhone 12 Pro Max', medium:'digital' },
+  { src:'photos/shenzhen-digital/03.jpg', title:'Lighthouse Wake', subject:'landscape', w:3024, h:4032, place:'shenzhen', year:2022, cam:'Apple iPhone 12 Pro Max', medium:'digital' },
+];
+const XM_SHOTS = [
+  { src:'photos/xiamen-digital/01.jpg', title:'Retro Corner Shop', subject:'street', w:1080, h:1616, place:'xiamen', year:2023, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/xiamen-digital/02.jpg', title:'Childhood', subject:'street', w:1616, h:1080, place:'xiamen', year:2023, cam:'Sony ZV-E1', medium:'digital' },
+];
+const MO_SHOTS = [
+  { src:'photos/macau-digital/01.jpg', title:'Awning Alley', subject:'street', w:3024, h:4032, place:'macau', year:2022, cam:'Apple iPhone 12 Pro Max', medium:'digital' },
+  { src:'photos/macau-digital/02.jpg', title:'Scooter Street', subject:'street', w:3024, h:4032, place:'macau', year:2022, cam:'Apple iPhone 12 Pro Max', medium:'digital' },
+];
+const OR_SHOTS = [
+  { src:'photos/orlando-digital/01.jpeg', title:'Amphicar Launch', subject:'street', w:4210, h:5614, place:'orlando', year:2026, cam:'Apple iPhone 17 Pro Max', medium:'digital' },
+  { src:'photos/orlando-digital/02.jpg', title:'Bougainvillea Pergola', subject:'landscape', w:1505, h:1006, place:'orlando', year:2025, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/orlando-digital/03.jpg', title:'Fish Pool', subject:'landscape', w:1616, h:1080, place:'orlando', year:2025, cam:'Sony ZV-E1', medium:'digital' },
+];
+const PT_SHOTS = [
+  { src:'photos/portraits/01.jpg', title:'Temizuya', subject:'people', w:1080, h:1919, place:'kyoto', year:2024, cam:'Fujifilm X-S10', medium:'digital' },
+  { src:'photos/portraits/02.jpg', title:'Kimono', subject:'people', w:1080, h:1919, place:'kyoto', year:2024, cam:'Fujifilm X-S10', medium:'digital' },
+  { src:'photos/portraits/03.jpg', title:'Kimono', subject:'people', w:1080, h:1919, place:'kyoto', year:2024, cam:'Fujifilm X-S10', medium:'digital' },
+  { src:'photos/portraits/04.jpg', title:'In Sky Capsule', subject:'people', w:1440, h:2162, place:'busan', year:2026, cam:'Ricoh GR IIIx HDF', medium:'digital' },
+  { src:'photos/portraits/05.jpg', title:'In Sky Capsule', subject:'people', w:1440, h:2160, place:'busan', year:2026, cam:'Ricoh GR IIIx HDF', medium:'digital' },
+  { src:'photos/portraits/06.jpg', title:'In Sky Capsule', subject:'people', w:1440, h:2160, place:'busan', year:2026, cam:'Ricoh GR IIIx HDF', medium:'digital' },
+  { src:'photos/portraits/07.jpg', title:'By the Window', subject:'people', w:1440, h:960, place:'busan', year:2026, cam:'Ricoh GR IIIx HDF', medium:'digital' },
+  { src:'photos/portraits/08.jpg', title:'By the Window', subject:'people', w:1440, h:960, place:'busan', year:2026, cam:'Ricoh GR IIIx HDF', medium:'digital' },
+  { src:'photos/portraits/09.jpg', title:'By the Window', subject:'people', w:1440, h:960, place:'busan', year:2026, cam:'Ricoh GR IIIx HDF', medium:'digital' },
+  { src:'photos/portraits/10.jpg', title:'In Disney', subject:'people', w:1080, h:1616, place:'tokyo', year:2024, cam:'Sony ZV-E1', medium:'digital' },
+  { src:'photos/portraits/11.jpg', title:'In Cafe', subject:'people', w:1080, h:1616, place:'tokyo', year:2024, cam:'Sony ZV-E1', medium:'digital' },
+  ...[['12.jpg','By the Sea',1620,1080,'cancun',2026],['13.jpg','Snow in the Park',1620,1080,'newyork',2026],['14.jpg','Lavender Field',1620,1080],['15.jpg','Lavender Field',1620,1080],['16c.jpg','Morning Light',1080,1620,'dali',2024]]
+    .map(([f, title, w, h, place, year]) => ({ src:'photos/portraits/'+f, title, subject:'people', w, h, ...(place ? { place, year } : {}), cam:'Canon R7', medium:'digital' })),
+  ...[['17.jpg','Gapstow Bridge',1080,1440,'newyork',2026,'Apple iPhone 17 Pro Max'],['18b.jpg','Sun Hat',1620,1080,null,null,'Canon R7'],['19b.jpg','Blossom Branch',1620,1080,'dali',2024,'Canon R7'],['20b.jpg','Lantern at Dusk',4034,3025,'dali',2024,'Apple iPhone 14 Pro Max'],['21b.jpg','Roses by the Window',1080,1620,'dali',2024,'Canon R7'],['22b.jpg','On the Bench',1080,1620,'dali',2024,'Canon R7'],['23b.jpg','At the Ancient City',1620,1080,'dali',2024,'Canon R7'],['24b.jpg','Sun Hat',1620,1080,null,null,'Canon R7'],['25b.jpg','In the Woods',1620,1080,'dali',2024,'Canon R7']]
+    .map(([f, title, w, h, place, year, cam]) => ({ src:'photos/portraits/'+f, title, subject:'people', w, h, ...(place ? { place } : {}), ...(year ? { year } : {}), cam: cam || '—', medium:'digital' })),
+];
+[['13','17'], ['16c','19','25b'], ['15','18b','24b']].forEach(([anchor, ...rest]) => { const at = f => PT_SHOTS.findIndex(s => s.src.endsWith('/' + f + '.jpg'));
+  const moved = rest.map(f => PT_SHOTS.splice(at(f), 1)[0]); PT_SHOTS.splice(at(anchor) + 1, 0, ...moved); });
+const PT2_SHOTS = PT_SHOTS.splice(9);
+const MN_SHOTS = [
+  { src:'photos/mongolia-digital/01.jpg', title:'Goats in the Larches', subject:'landscape', w:3848, h:2889, place:'mongolia', year:2019, cam:'Apple iPhone 7 Plus', medium:'digital' },
+  { src:'photos/mongolia-digital/02.jpg', title:'Ovoo in the Valley', subject:'landscape', w:5457, h:3072, place:'mongolia', year:2019, cam:'Apple iPhone 7 Plus', medium:'digital' },
+];
+const YN_SHOTS = [
+  { src:'photos/yunnan-digital/01.jpg', title:'Rays over the Peaks', subject:'landscape', w:1280, h:853, place:'yunnan', year:2019, cam:'Apple iPhone 7 Plus', medium:'digital' },
+];
+const BJ_SHOTS = [
+  { src:'photos/beijing-digital/01.jpg', title:'Ginkgo Gate', subject:'street', w:2755, h:3859, place:'beijing', year:2021, cam:'Apple iPhone 12 Pro Max', medium:'digital' },
+];
+const US_SHOTS = [...LA_SHOTS, ...OR_SHOTS];
+const JP_SHOTS = [...TK_SHOTS, ...KY_SHOTS, ...OS_SHOTS];
+const CN_SHOTS = [...SH_SHOTS, ...WX_SHOTS, ...WH_SHOTS, ...DL_SHOTS, ...XM_SHOTS, ...CS_SHOTS, ...SZN_SHOTS, ...HK_SHOTS, ...MO_SHOTS, ...YN_SHOTS, ...BJ_SHOTS];
+[NY_SHOTS, US_SHOTS, XJ_SHOTS, SZ_SHOTS, CN_SHOTS, JP_SHOTS, MN_SHOTS].forEach(arr => arr.sort((x, y) => (y.year || 0) - (x.year || 0)));
+const COLS = [
+  { id:'ny', name:'New York 2024–2026', cat:0, shots:NY_SHOTS, ars:NY_SHOTS.map(s => s.w / s.h), cx:-3500, cy:-1000, place:'New York, NY', titles:NY_SHOTS.map(s => s.title), cams:[...new Set(NY_SHOTS.map(s => s.cam))] },
+  { id:'us', name:'United States 2025–2026', cat:0, shots:US_SHOTS, ars:US_SHOTS.map(s => s.w / s.h), cx:-2100, cy:-1000, place:'Various', titles:US_SHOTS.map(s => s.title), cams:[...new Set(US_SHOTS.map(s => s.cam))] },
+  { id:'xj', name:'Xinjiang 2025', cat:0, shots:XJ_SHOTS, ars:XJ_SHOTS.map(s => s.w / s.h), cx:-700, cy:-1000, place:'Xinjiang, China', titles:XJ_SHOTS.map(s => s.title), cams:[...new Set(XJ_SHOTS.map(s => s.cam))] },
+  { id:'sz', name:'Suzhou 2023', cat:0, shots:SZ_SHOTS, ars:SZ_SHOTS.map(s => s.w / s.h), cx:700, cy:-1000, place:'Suzhou, China', titles:SZ_SHOTS.map(s => s.title), cams:[...new Set(SZ_SHOTS.map(s => s.cam))] },
+  { id:'cn', name:'China 2019–2026', cat:0, shots:CN_SHOTS, ars:CN_SHOTS.map(s => s.w / s.h), cx:2100, cy:-1000, place:'Various', titles:CN_SHOTS.map(s => s.title), cams:[...new Set(CN_SHOTS.map(s => s.cam))] },
+  { id:'jp', name:'Japan 2019–2025', cat:0, shots:JP_SHOTS, ars:JP_SHOTS.map(s => s.w / s.h), cx:3500, cy:-1000, place:'Various', titles:JP_SHOTS.map(s => s.title), cams:[...new Set(JP_SHOTS.map(s => s.cam))] },
+  { id:'mn', name:'Mongolia 2019', cat:0, shots:MN_SHOTS, ars:MN_SHOTS.map(s => s.w / s.h), cx:4900, cy:-1000, place:'Mongolia', titles:MN_SHOTS.map(s => s.title), cams:['Apple iPhone 7 Plus'] },
+  { id:'film', name:'Film', cat:1, shots:FILM_SHOTS, ars:FILM_SHOTS.map(s => s.w / s.h), cx:-1300, cy:1500, place:'Various', titles:FILM_SHOTS.map(s => s.title), cams:FILM },
+  { id:'people', name:'Portraits I', cat:2, shots:PT_SHOTS, ars:PT_SHOTS.map(s => s.w / s.h), cx:0, cy:1500, place:'Kyoto, Busan & Tokyo', titles:PT_SHOTS.map(s => s.title), cams:[...new Set(PT_SHOTS.map(s => s.cam))] },
+  { id:'people2', name:'Portraits II', cat:2, shots:PT2_SHOTS, ars:PT2_SHOTS.map(s => s.w / s.h), cx:0, cy:1500, place:'Cancún, New York & Dali', titles:PT2_SHOTS.map(s => s.title), cams:[...new Set(PT2_SHOTS.map(s => s.cam).filter(c => c !== '—'))] },
+];
+(() => { const yrs = c => c.shots.map(s => s.year || 0); const dig = COLS.filter(c => c.cat === 0);
+  dig.sort((p, q) => Math.max(...yrs(q)) - Math.max(...yrs(p)) || Math.min(...yrs(q)) - Math.min(...yrs(p)));
+  dig.forEach((c, i) => { c.cx = (i - (dig.length - 1) / 2) * 1400; });
+  const rest = COLS.filter(c => c.cat !== 0);
+  const rows = n => Math.ceil(n / 3), digRows = Math.max(...dig.map(c => rows(c.titles.length)));
+  rest.forEach((c, i) => { c.cy = -1000 + digRows * 200 + 1500 + rows(c.titles.length) * 200; c.cx = (i - (rest.length - 1) / 2) * 2000; }); COLS.length = 0; COLS.push(...dig, ...rest); })();
+const CATS = [
+  { name:'Digital', sub:'TWENTY PLACES' },
+  { name:'Film', sub:'35MM & 120' },
+  { name:'Portraits', sub:'FRIENDS' },
+];
+CATS.forEach((k, i) => { k.cols = COLS.map((c, ci) => c.cat === i ? ci : -1).filter(x => x >= 0); });
+const ARS = [1.5, 0.67, 1.5, 0.8, 1.25, 1.5, 0.67, 1, 1.5];
+const TAGS = [
+  { key:'medium', label:'Medium', vals:['digital','film'] },
+  { key:'subject', label:'Subject', vals:['street','landscape','people'] },
+  { key:'orient', label:'Orientation', vals:['horizontal','vertical'] },
+  { key:'year', label:'Year', vals:['2019','2021','2022','2023','2024','2025','2026'] },
+  { key:'place', label:'Place', vals:['losangeles','newyork','xinjiang','cancun','changsha','orlando','dali','tokyo','osaka','kyoto','wuhan','shanghai','wuxi','suzhou','hongkong','shenzhen','xiamen','macau','mongolia','yunnan','beijing','busan'] },
+];
+const PLACES = { losangeles:'Los Angeles, CA', newyork:'New York, NY', xinjiang:'Xinjiang, China', cancun:'Cancún, Mexico', changsha:'Changsha, China', orlando:'Orlando, FL', dali:'Dali, China', tokyo:'Tokyo, Japan', osaka:'Osaka, Japan', kyoto:'Kyoto, Japan', wuhan:'Wuhan, China', shanghai:'Shanghai, China', wuxi:'Wuxi, China', suzhou:'Suzhou, China', hongkong:'Hong Kong, China', shenzhen:'Shenzhen, China', xiamen:'Xiamen, China', macau:'Macau, China', mongolia:'Mongolia', yunnan:'Yunnan, China', beijing:'Beijing, China', busan:'Busan, South Korea' };
+const COL_PLACE = { la:'losangeles', ny:'newyork', xj:'xinjiang', cs:'changsha', or:'orlando', dl:'dali', tk:'tokyo', os:'osaka', ky:'kyoto', wh:'wuhan', sh:'shanghai', wx:'wuxi', sz:'suzhou', hk:'hongkong', szn:'shenzhen', xm:'xiamen', mo:'macau' };
+const B = {};
+
+const SFX = (() => {
+  const shRaw = fetch('sounds/shutter.mp3').then(r => r.arrayBuffer()).catch(() => null);
+  const hvRaw = fetch('sounds/paper-hover.mp3').then(r => r.arrayBuffer()).catch(() => null); let hvBuf = null, hvP = null;
+  let ctx = null, out = null, nb = null, shBuf = null, shP = null, vol = .6, last = {};
+  let on = true;
+  const unlock = () => { if (!ctx) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return; ctx = new AC(); out = ctx.createGain(); out.gain.value = vol; out.connect(ctx.destination);
+      nb = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate); const d = nb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random()*2-1;
+      shP = shRaw.then(a => a && ctx.decodeAudioData(a.slice(0))).then(b => { shBuf = b; return b; }).catch(() => null);
+      hvP = hvRaw.then(a => a && ctx.decodeAudioData(a.slice(0))).then(b => { hvBuf = b; return b; }).catch(() => null); }
+    if (ctx.state === 'suspended') ctx.resume(); };
+  const ok = (k, gap = 0) => { if (!on || !ctx || ctx.state !== 'running') return false; const n = performance.now(); if (gap && n - (last[k] || 0) < gap) return false; last[k] = n; return true; };
+  const env = (t, a, peak, dec) => { const g = ctx.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(.0001, t + a + dec); g.connect(out); return g; };
+  const noise = (t, dur, type, f, q, peak, a = .002) => { const s = ctx.createBufferSource(); s.buffer = nb; const fl = ctx.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q;
+    s.connect(fl); fl.connect(env(t, a, peak, dur)); s.start(t, Math.random()*.5); s.stop(t + a + dur + .05); return fl; };
+  const tone = (t, f, dur, peak, type = 'sine', f2) => { const o = ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    o.connect(env(t, .002, peak, dur)); o.start(t); o.stop(t + dur + .05); };
+  return {
+    unlock, get on(){ return on; },
+    toggle(){ on = !on; try { localStorage.setItem('ks-sound', on ? 'on' : 'off'); } catch (e) {} if (on) { unlock(); setTimeout(() => this.click(), 30); } return on; },
+    setVol(v){ vol = v; if (out) out.gain.value = v; },
+    click(){ if (!ok('click', 30)) return; const t = ctx.currentTime; noise(t, .025, 'bandpass', 3200, 2.5, .22); tone(t, 1900, .03, .05); },
+    hoverPrint(){ if (!ok('hover', 120)) return; const play = b => { const s = ctx.createBufferSource(), g = ctx.createGain(); g.gain.value = .65; s.buffer = b; s.connect(g); g.connect(out); s.start(); };
+      if (hvBuf) play(hvBuf); else if (hvP) hvP.then(b => b && play(b)); },
+    tick(){ if (!ok('tick', 60)) return; const t = ctx.currentTime; tone(t, 2600, .018, .035); },
+    shutter(){ if (!on || !ctx) return; const n = performance.now(); if (n - (last.shutter || 0) < 200) return; last.shutter = n;
+      const play = b => { const s = ctx.createBufferSource(); s.buffer = b; s.connect(out); s.start(); };
+      if (shBuf) return play(shBuf);
+      if (shP) return shP.then(b => b && play(b));
+      const t = ctx.currentTime;
+      noise(t, .045, 'highpass', 1400, .7, .5); tone(t, 140, .07, .35, 'sine', 60);
+      noise(t + .085, .06, 'bandpass', 2400, 1.2, .38); tone(t + .085, 110, .06, .22, 'sine', 50);
+      noise(t + .16, .09, 'lowpass', 900, .8, .06); },
+    whoosh(){ if (!ok('whoosh', 280)) return; const t = ctx.currentTime, f = noise(t, .55, 'bandpass', 350, 1.4, .09, .18);
+      f.frequency.setValueAtTime(350, t); f.frequency.exponentialRampToValueAtTime(1500, t + .25); f.frequency.exponentialRampToValueAtTime(500, t + .7); },
+    paper(){ if (!ok('paper', 80)) return; const t = ctx.currentTime, f = noise(t, .16, 'bandpass', 1800, .9, .12, .03);
+      f.frequency.exponentialRampToValueAtTime(4200, t + .18); noise(t + .02, .05, 'highpass', 5000, .7, .04); },
+    drop(){ if (!ok('drop', 80)) return; const t = ctx.currentTime, f = noise(t, .12, 'bandpass', 2600, .9, .09, .01);
+      f.frequency.exponentialRampToValueAtTime(900, t + .14); tone(t + .05, 180, .05, .06, 'sine', 90); },
+  };
+})();
+
+function rng(seed){ let s = seed; return () => { s = (s*9301+49297)%233280; return s/233280; }; }
+const webOf = src => src && src.startsWith('photos/') ? src.replace(/^photos\//, 'thumbs/').replace(/\.\w+$/, '.webp') : src;
+
+class Component extends DCLogic {
+  constructor(p){
+    super(p);
+    const r = rng(7);
+    this.photos = [];
+    COLS.forEach((c, ci) => {
+      c.labelY = c.cy - Math.ceil(c.titles.length/3)*200 - 420;
+      c.titles.forEach((t, i) => {
+        const ar = c.ars ? c.ars[i % c.ars.length] : ARS[(i + ci*2) % ARS.length];
+        const w = ar >= 1 ? 300 : 220;
+        const h = w/ar;
+        const col = i%3, row = Math.floor(i/3), rows = Math.ceil(c.titles.length/3);
+        const sx = c.cx + (col-1)*370 + (r()-.5)*90 - w/2;
+        const sy = c.cy + (row-(rows-1)/2)*390 + (r()-.5)*80 - h/2 + 60;
+        const tr = Math.ceil(c.titles.length/3), tc = i%3, trow = Math.floor(i/3);
+        const tx = c.cx + (tc-1)*360 - w/2;
+        const ty = c.cy + (trow-(tr-1)/2)*400 - h/2 + 60;
+        this.photos.push({ id:`${c.id}-${i}`, ci, i, ar, w, h, title:t, sx, sy, rot:(r()*2-1), tx, ty,
+          year: c.name.match(/20\d\d/) ? +c.name.match(/20\d\d/)[0] : 2025 + Math.floor(r()*2), cam: c.cams[Math.floor(r()*c.cams.length)] });
+      });
+    });
+    const r2 = rng(31), pick = a => a[Math.floor(r2()*a.length)];
+    this.photos.forEach(p => {
+      const c = COLS[p.ci];
+      const place = COL_PLACE[c.id] || pick(['losangeles','newyork','xinjiang']);
+      const subject = c.id === 'people' ? 'people' : c.id === 'land' ? 'landscape' : c.id === 'xj' ? (r2() < .7 ? 'landscape' : 'street') : pick(['street','street','landscape','people']);
+      if (!COL_PLACE[c.id]) p.year = place === 'xinjiang' ? 2025 : 2025 + Math.floor(r2()*2);
+      p.tags = { medium: FILM.includes(p.cam) ? 'film' : 'digital', subject, orient: p.ar >= 1 ? 'horizontal' : 'vertical', year: String(p.year), place };
+      const shot = c.shots && c.shots[p.i];
+      if (shot) { p.src = shot.src; p.year = shot.year || 2025; p.cam = shot.cam || 'Fujifilm QuickSnap · 32mm f/10'; p.film = shot.medium === 'digital' ? '' : (shot.film || 'Fujicolor Superia X-TRA 400 · 35mm C-41');
+        p.tags = { medium:shot.medium || 'film', subject:shot.subject, orient: shot.w >= shot.h ? 'horizontal' : 'vertical', year:String(p.year), place:shot.place || 'xinjiang' }; }
+    });
+    this.frames = CATS.map((k) => {
+      const ps = this.photos.filter(p => k.cols.includes(p.ci));
+      let x0 = Math.min(...ps.map(p => Math.min(p.sx, p.tx))) - 120, x1 = Math.max(...ps.map(p => Math.max(p.sx, p.tx) + p.w)) + 120;
+      let y0 = Math.min(...ps.map(p => Math.min(p.sy, p.ty))) - 120, y1 = Math.max(...ps.map(p => Math.max(p.sy, p.ty) + p.h)) + 120;
+      if (k.cols.length > 1 && k.name !== 'Portraits') { y0 = Math.min(y0, ...k.cols.map(ci => COLS[ci].labelY - 80)); x0 = Math.min(x0, COLS[k.cols[0]].cx - 640); x1 = Math.max(x1, COLS[k.cols[k.cols.length-1]].cx + 640); }
+      return { x0, y0, x1, y1 };
+    });
+    B.x0 = Math.min(...this.frames.map(f => f.x0)) - 40; B.x1 = Math.max(...this.frames.map(f => f.x1)) + 40;
+    B.y0 = Math.min(...this.frames.map(f => f.y0)) - 360; B.y1 = Math.max(...this.frames.map(f => f.y1)) + 40;
+    this.state = { pan:{x:0,y:0}, z:.25, focus:null, cat:null, active:null, anim:true, vw:1400, vh:900, dragging:false, sel:{}, tagsOpen:true, phase: p.skipIntro ? 'archive' : 'loading', prog:0, shut:false, flash:0 };
+    this.rootRef = React.createRef(); this.fpRef = React.createRef();
+    this.camHost = React.createRef();
+    this.progRef = React.createRef(); this.expRef = React.createRef(); this.filmRef = React.createRef(); this.worldRef = React.createRef();
+    this.tipRef = React.createRef();
+  }
+  componentDidMount(){
+    this.measure = () => this.setState({ vw:innerWidth, vh:innerHeight });
+    addEventListener('resize', this.measure);
+    this.setState({ vw:innerWidth, vh:innerHeight, tagsOpen: innerWidth >= 900 }, () => this.overview());
+    if (this.state.phase === 'loading') {
+      let prog = 0, shown = -1;
+      this.loadT = setInterval(() => {
+        prog = Math.min(this.ready3 ? 100 : 90, prog + (this.ready3 ? 3 : .8 + Math.random()*1.6));
+        const f = Math.floor(prog / 100 * 36);
+        if (this.progRef.current) this.progRef.current.textContent = String(Math.floor(prog)).padStart(3, '0');
+        if (this.expRef.current) this.expRef.current.textContent = String(f).padStart(2, '0') + ' / 36 EXPOSURES';
+        if (f !== shown && this.filmRef.current) { shown = f;
+          [...this.filmRef.current.querySelectorAll('[data-fr]')].forEach((d, i) => { const on = i < f;
+            d.style.background = on ? 'oklch(0.66 0.2 25)' : 'transparent'; d.style.borderColor = on ? 'oklch(0.66 0.2 25)' : '#3a352f'; }); }
+        if (prog >= 100) { clearInterval(this.loadT); setTimeout(() => this.setState({ phase:'intro' }), 380); }
+      }, 40);
+    }
+    if (this.state.phase !== 'archive') this.initCam();
+    this.onWheel = e => {
+      if (this.state.phase !== 'archive') { e.preventDefault(); if (this.three) this.three.zoom(e.deltaY, e); return; }
+      if (this.state.focus) return;
+      if (e.target.closest && e.target.closest('[data-panel]')) return;
+      e.preventDefault();
+      const { z, pan } = this.getView();
+      const nz = Math.min(1.6, Math.max(.1, z * Math.exp(-e.deltaY*0.0015)));
+      this.pending = { z:nz, pan:{ x:e.clientX-(e.clientX-pan.x)*nz/z, y:e.clientY-(e.clientY-pan.y)*nz/z } };
+      this.applyView(this.pending);
+      clearTimeout(this.commitT); this.commitT = setTimeout(() => this.commitView(), 160);
+    };
+    this.rootRef.current.addEventListener('wheel', this.onWheel, { passive:false });
+    this.onKey = e => {
+      if (this.state.phase === 'intro' && (e.key === 'Enter' || e.key === ' ')) return this.fire();
+      if (this.state.phase !== 'archive') return;
+      if (this.state.zoom) { if (e.key === 'Escape') this.setState({ zoom:false }); else if (e.key === '+' || e.key === '=') this.zBy(1.4); else if (e.key === '-') this.zBy(1/1.4); else if (e.key === 'ArrowRight') this.step(1); else if (e.key === 'ArrowLeft') this.step(-1); return; }
+      if (e.key === 'Escape') { if (this.state.focus) this.close(); else if (this.hasSel(this.state.sel)) this.overview(); else if (this.state.active !== null && CATS[this.state.cat].cols.length > 1) this.goCat(this.state.cat); else this.overview(); }
+      else if (this.state.focus && e.key === 'ArrowRight') this.step(1);
+      else if (this.state.focus && e.key === 'ArrowLeft') this.step(-1);
+      else if (!this.state.focus && e.key === '0') this.overview();
+      else if (!this.state.focus && e.key >= '1' && e.key <= '3') this.goCat(+e.key-1);
+    };
+    addEventListener('keydown', this.onKey);
+    this.onSfx = e => { SFX.unlock(); if (e.type === 'pointerdown' && e.button === 0 && e.target.closest && e.target.closest('button') && !e.target.closest('[data-sfx-skip]')) SFX.click(); };
+    addEventListener('pointerdown', this.onSfx, true); addEventListener('keydown', this.onSfx, true);
+    SFX.setVol(this.props.sfxVolume ?? .6);
+  }
+  componentDidUpdate(){ if (this._zEl) { const img = this._zEl.querySelector('[data-zimg]'); if (img && img.dataset.src && img.getAttribute('src') !== img.dataset.src) this.zApply(); } }
+  componentWillUnmount(){ this._dead = true; removeEventListener('resize', this.measure); removeEventListener('keydown', this.onKey); removeEventListener('pointerdown', this.onSfx, true); removeEventListener('keydown', this.onSfx, true); cancelAnimationFrame(this.raf); clearInterval(this.loadT); this.offResize3 && this.offResize3(); }
+  enter(fn){
+    const { vw, vh } = this.state, z = .9;
+    this.setState({ phase:'archive', anim:false, z, pan:{ x:vw/2, y:vh/2 - (B.y0+B.y1)/2*z } });
+    setTimeout(() => fn ? fn() : this.overview(), 60);
+  }
+  fire(fn){
+    if (this.state.shut || this.state.phase !== 'intro' || this.firing) return;
+    this.firing = true;
+    SFX.unlock(); SFX.shutter();
+    if (this.three) this.three.press();
+    setTimeout(() => this.setState({ shut:true }), 170);
+    setTimeout(() => { this.setState({ flash:1 }); this.enter(fn); }, 410);
+    setTimeout(() => { this.setState({ shut:false, flash:0 }); this.firing = false; }, 740);
+  }
+  async initCam(){
+    let THREE;
+    try { THREE = await import('https://unpkg.com/three@0.160.0/build/three.module.js'); } catch (e) { this.ready3 = true; return; }
+    const host = this.camHost.current; if (!host) { this.ready3 = true; return; }
+    try { await document.fonts.load("italic 112px 'Instrument Serif'"); await document.fonts.load("500 22px 'IBM Plex Mono'"); } catch (e) {}
+    const renderer = new THREE.WebGLRenderer({ antialias:true });
+    renderer.setPixelRatio(Math.min(1.5, devicePixelRatio));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.setClearColor(0x1c1a17); renderer.toneMappingExposure = 1.35;
+    const el = renderer.domElement; el.style.display = 'block'; el.style.touchAction = 'none'; el.style.cursor = 'grab';
+    host.appendChild(el);
+    const scene = new THREE.Scene(); scene.fog = new THREE.Fog(0x1c1a17, 12, 30);
+    const view = new THREE.PerspectiveCamera(38, 1, .05, 60);
+    const pm = new THREE.PMREMGenerator(renderer), envS = new THREE.Scene();
+    envS.add(new THREE.Mesh(new THREE.BoxGeometry(30,30,30), new THREE.MeshBasicMaterial({ color:0x0b0a09, side:THREE.BackSide })));
+    [[10,3,0xeeeeee,0,7,5],[3,8,0xf0d8bc,-9,1,3],[3,8,0xb8c4e0,9,2,-3],[12,3,0x6a6662,0,-6,6]].forEach(([w,hh,c,x,y,z]) => {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(w,hh), new THREE.MeshBasicMaterial({ color:c, side:THREE.DoubleSide }));
+      m.position.set(x,y,z); m.lookAt(0,0,0); envS.add(m); });
+    scene.environment = pm.fromScene(envS, .04).texture;
+    const noise = (rep) => { const cv = document.createElement('canvas'); cv.width = cv.height = 256;
+      const cx = cv.getContext('2d'), im = cx.createImageData(256,256);
+      for (let i = 0; i < im.data.length; i += 4) { const v = 90 + Math.random()*165 | 0; im.data[i] = im.data[i+1] = im.data[i+2] = v; im.data[i+3] = 255; }
+      cx.putImageData(im,0,0); const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep,rep); return t; };
+    const M = {
+      leather: new THREE.MeshStandardMaterial({ color:0x161514, roughness:.88, bumpMap:noise(1.6), bumpScale:.02 }),
+      chrome: new THREE.MeshStandardMaterial({ color:0xdcdcdc, metalness:1, roughness:.2 }),
+      satin: new THREE.MeshStandardMaterial({ color:0xb0b0b0, metalness:1, roughness:.4 }),
+      black: new THREE.MeshStandardMaterial({ color:0x0d0d0d, metalness:.5, roughness:.38 }),
+      glass: new THREE.MeshPhysicalMaterial({ color:0x04060b, roughness:.02, clearcoat:1, clearcoatRoughness:0, iridescence:1, iridescenceIOR:1.7, iridescenceThicknessRange:[250,550] }),
+      win: new THREE.MeshPhysicalMaterial({ color:0x0f1318, metalness:.3, roughness:.05, clearcoat:1 }),
+      frost: new THREE.MeshStandardMaterial({ color:0xe6e2da, roughness:.6, emissive:0x1d1b16 }),
+      red: new THREE.MeshStandardMaterial({ color:0xc41c1c, roughness:.3, emissive:0x2a0000 }),
+      cyc: new THREE.MeshStandardMaterial({ color:0xd6d1c8, roughness:.95, side:THREE.DoubleSide }),
+      floor: new THREE.MeshStandardMaterial({ color:0x45403a, roughness:.82, bumpMap:noise(14), bumpScale:.01 }),
+      wood: (() => {
+        const c = document.createElement('canvas'); c.width = 256; c.height = 512; const x = c.getContext('2d');
+        x.fillStyle = '#a0703f'; x.fillRect(0,0,256,512);
+        for (let k = 0; k < 70; k++) { const px = Math.random()*256, w = 1 + Math.random()*4, a = .08 + Math.random()*.22;
+          x.strokeStyle = `rgba(${Math.random() < .5 ? '70,38,16' : '190,140,90'},${a})`; x.lineWidth = w; x.beginPath();
+          for (let y = 0; y <= 512; y += 16) x.lineTo(px + Math.sin(y*.012 + k)*6 + Math.sin(y*.05 + k*2)*1.5, y); x.stroke(); }
+        const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping;
+        return new THREE.MeshStandardMaterial({ map:t, bumpMap:t, bumpScale:.004, roughness:.6 }); })(),
+      woodTop: (() => {
+        const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
+        x.fillStyle = '#a8763f'; x.fillRect(0,0,512,512);
+        const cx = 200, cy = 290;
+        for (let r = 6; r < 520; r += 5 + Math.random()*7) { x.strokeStyle = `rgba(${Math.random() < .6 ? '80,44,18' : '196,148,96'},${.12 + Math.random()*.25})`;
+          x.lineWidth = 1 + Math.random()*2.5; x.beginPath();
+          for (let a = 0; a <= Math.PI*2 + .05; a += .05) { const rr = r * (1 + Math.sin(a*3 + r*.02)*.03); x.lineTo(cx + Math.cos(a)*rr*1.25, cy + Math.sin(a)*rr*.8); }
+          x.stroke(); }
+        const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+        return new THREE.MeshStandardMaterial({ map:t, bumpMap:t, bumpScale:.003, roughness:.5 }); })(),
+      stand: new THREE.MeshStandardMaterial({ color:0x3a3a3a, metalness:.7, roughness:.35, side:THREE.DoubleSide }),
+      diff: new THREE.MeshStandardMaterial({ color:0xffffff, emissive:0xfff2e0, emissiveIntensity:1.1 }),
+      line: new THREE.MeshStandardMaterial({ color:0x9a9184, roughness:.8 }),
+    };
+    const shMat = M.chrome.clone();
+    const P = Math.PI/2, up = new THREE.Vector3(0,1,0);
+    const rr = (w,hh,r) => { const s = new THREE.Shape(), x = -w/2, y = -hh/2;
+      s.moveTo(x+r,y); s.lineTo(x+w-r,y); s.quadraticCurveTo(x+w,y,x+w,y+r); s.lineTo(x+w,y+hh-r); s.quadraticCurveTo(x+w,y+hh,x+w-r,y+hh);
+      s.lineTo(x+r,y+hh); s.quadraticCurveTo(x,y+hh,x,y+hh-r); s.lineTo(x,y+r); s.quadraticCurveTo(x,y,x+r,y); return s; };
+    const ext = (w,hh,d,r,b = .04) => { const gg = new THREE.ExtrudeGeometry(rr(w,hh,r), { depth:d-b*2, bevelEnabled:true, bevelThickness:b, bevelSize:b, bevelSegments:4, curveSegments:14 }); gg.translate(0,0,-(d-b*2)/2); return gg; };
+    const cyl = (r,hh,r2) => new THREE.CylinderGeometry(r, r2 ?? r, hh, 48);
+    const rod = (p, q, r, mat) => { const A = new THREE.Vector3(...p), Bq = new THREE.Vector3(...q), d = Bq.clone().sub(A);
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, d.length(), 12), mat); m.position.copy(A).add(Bq).multiplyScalar(.5);
+      m.quaternion.setFromUnitVectors(up, d.normalize()); scene.add(m); return m; };
+    const legs = (x, z, hh, spread, r, mat, off = .5) => { for (let i = 0; i < 3; i++) { const an = i/3*Math.PI*2 + off; rod([x,hh,z], [x+Math.cos(an)*spread, 0, z+Math.sin(an)*spread], r, mat); } };
+
+    // camera body — full-frame pro DSLR
+    M.body = new THREE.MeshStandardMaterial({ color:0x1c1c1c, metalness:.2, roughness:.5 });
+    M.rubber = new THREE.MeshStandardMaterial({ color:0x101010, roughness:.95, bumpMap:noise(3), bumpScale:.015 });
+    M.mark = new THREE.MeshBasicMaterial({ color:0xd8d4cc });
+    const TX = .15, TZ = .7, TH = 1.24, lx = .3, ly = -.15;
+    const rt = new THREE.WebGLRenderTarget(960, 640); rt.texture.colorSpace = THREE.SRGBColorSpace;
+    const screenMat = new THREE.MeshBasicMaterial({ map:rt.texture, toneMapped:false });
+    const hud = (af) => {
+      const c = document.createElement('canvas'); c.width = 1024; c.height = 683; const x = c.getContext('2d');
+      const F = (s, w = 500) => `${w} ${s}px "Helvetica Neue", Arial, sans-serif`;
+      x.strokeStyle = 'rgba(255,255,255,.28)'; x.lineWidth = 2;
+      [1,2].forEach(i => { x.beginPath(); x.moveTo(i*1024/3, 64); x.lineTo(i*1024/3, 593); x.stroke(); x.beginPath(); x.moveTo(0, 64 + i*529/3); x.lineTo(1024, 64 + i*529/3); x.stroke(); });
+      x.fillStyle = 'rgba(0,0,0,.55)'; x.fillRect(0,0,1024,64); x.fillRect(0,593,1024,90);
+      x.fillStyle = '#fff'; x.textBaseline = 'middle';
+      x.strokeStyle = '#fff'; x.lineWidth = 3; x.strokeRect(18,12,52,40); x.font = F(30,700); x.textAlign = 'center'; x.fillText('M', 44, 33);
+      x.textAlign = 'left'; x.font = F(24,600);
+      [['AWB',96],['ONE SHOT',180],['RAW',330],['⊡ 3:2',410]].forEach(([t,px]) => x.fillText(t, px, 33));
+      x.strokeRect(900,20,56,26); x.fillRect(956,27,6,12); x.fillRect(904,24,36,18);
+      x.textAlign = 'right'; x.fillText('[99]', 890, 33);
+      x.textAlign = 'left'; x.font = F(34,600);
+      x.fillText('1/125', 28, 638); x.fillText('F2.8', 170, 638);
+      const mx = 330, mw = 340;
+      x.font = F(18,500); x.textAlign = 'center';
+      ['-3','2','1','0','1','2','+3'].forEach((t,i) => { const px = mx + i*mw/6; x.fillText(t, px, 618);
+        x.fillRect(px-1.5, 632, 3, 14); if (i < 6) for (let k = 1; k < 3; k++) x.fillRect(px + k*mw/18 - 1, 638, 2, 8); });
+      x.fillStyle = '#fff'; x.beginPath(); x.moveTo(mx + mw/2, 650); x.lineTo(mx + mw/2 - 9, 666); x.lineTo(mx + mw/2 + 9, 666); x.fill();
+      x.textAlign = 'left'; x.font = F(34,600); x.fillText('ISO 400', 720, 638);
+      x.font = F(22,600); x.fillStyle = 'rgba(255,255,255,.8)'; x.textAlign = 'right'; x.fillText('Q', 1000, 638);
+      const ax = 512, ay = 328, aw = 70, ah = 52, L = 22;
+      x.strokeStyle = af ? '#36e06a' : '#fff'; x.lineWidth = 5;
+      [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sy]) => { const cx = ax + sx*aw, cy = ay + sy*ah;
+        x.beginPath(); x.moveTo(cx, cy - sy*L); x.lineTo(cx, cy); x.lineTo(cx - sx*L, cy); x.stroke(); });
+      if (af) { x.fillStyle = '#36e06a'; x.beginPath(); x.arc(40, 560, 10, 0, Math.PI*2); x.fill(); }
+      const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+    };
+    const hudW = hud(false), hudG = hud(true);
+    const hudMat = new THREE.MeshBasicMaterial({ map:hudW, transparent:true, depthWrite:false, toneMapped:false });
+    const lv = new THREE.PerspectiveCamera(36, 1.5, .05, 30);
+    let g = null, sh = null, SHY = 1.4;
+    M.prism = new THREE.MeshStandardMaterial({ color:0x1c1c1c, metalness:.2, roughness:.48, flatShading:true });
+    const build = () => {
+      if (g) scene.remove(g);
+      g = new THREE.Group();
+      const add = (geo, mat, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x,y,z); m.rotation.set(rx,ry,rz); g.add(m); return m; };
+      const knurl = (x, y, z, r, hh, n) => { add(cyl(r, hh), M.body, x, y, z); for (let i = 0; i < n; i++) { const an = i/n*Math.PI*2; add(new THREE.BoxGeometry(.045, hh*.9, .045), M.rubber, x+Math.cos(an)*r, y, z+Math.sin(an)*r); } };
+      const BW = 4.5, BH = 2.9, BD = 1.9, fz = BD/2, top = BH/2, lx = .35, ly = -.3;
+      // body, leatherette, grip
+      add(ext(BW, BH, BD, .4), M.body, 0,0,0);
+      add(ext(1.25, BH-.8, .05, .2, .015), M.rubber, 1.6, -.25, fz+.01);
+      add(ext(1.25, BH-.8, .05, .2, .015), M.rubber, 1.6, -.25, -fz-.01);
+      add(ext(1.35, BH-.05, BD+.95, .55, .14), M.rubber, -BW/2+.5, -.05, .45);
+      // pentaprism
+      const pg = new THREE.CylinderGeometry(.9, 1.6, 1.15, 4, 1); pg.rotateY(Math.PI/4); pg.scale(1, 1, .72);
+      add(pg, M.prism, lx, top+.5, -.1);
+      add(new THREE.BoxGeometry(.75,.09,.6), M.satin, lx, top+1.12, -.1);
+      add(new THREE.BoxGeometry(.6,.05,.5), M.black, lx, top+1.18, -.1);
+      // top: mode dial left, LCD + buttons + shutter on grip side
+      knurl(1.7, top+.14, -.15, .42, .28, 36);
+      add(cyl(.13,.07), M.body, 1.7, top+.32, -.15);
+      add(ext(1.1,.75,.04,.08,.01), M.win, -1.05, top+.02, .0, -P);
+      [-1.45,-1.15,-.85,-.55].forEach(x => add(new THREE.BoxGeometry(.2,.06,.14), M.body, x, top+.03, .55));
+      add(cyl(.24,.06), M.body, -BW/2+.5, top+.0, fz+.62);
+      SHY = top + .08;
+      sh = add(cyl(.16,.1), shMat, -BW/2+.5, SHY, fz+.62);
+      add(cyl(.22,.32), M.rubber, -BW/2+.78, top-.12, fz+.12, 0,0,P);
+      [-1,1].forEach(s => add(new THREE.TorusGeometry(.12,.035,8,16), M.satin, s*(BW/2+.02), top-.25, -.1, 0,P,0));
+      // mount + EF L zoom
+      add(cyl(1.22,.1), M.chrome, lx,ly,fz+.03, P);
+      add(cyl(.13,.06), M.body, lx-1.42, ly+.35, fz+.03, P);
+      add(cyl(1.08,.45), M.body, lx,ly,fz+.3, P);
+      const ribs = (r, z0, len, n) => { add(cyl(r-.02,len), M.rubber, lx,ly,z0+len/2, P);
+        for (let i = 0; i < n; i++) { const an = i/n*Math.PI*2; add(new THREE.BoxGeometry(.07,.07,len), M.rubber, lx+Math.cos(an)*r, ly+Math.sin(an)*r, z0+len/2, 0,0,an); } };
+      ribs(1.14, fz+.53, .95, 48);
+      add(cyl(1.1,.4), M.body, lx,ly,fz+1.68, P);
+      [-.3,-.15,0,.15,.3].forEach(dx => add(new THREE.BoxGeometry(.03,.02,.12), M.mark, lx+dx, ly+1.1, fz+1.62));
+      ribs(1.12, fz+1.88, .45, 44);
+      add(cyl(1.17,.36,1.14), M.body, lx,ly,fz+2.51, P);
+      add(cyl(1.18,.05), M.red, lx,ly,fz+2.4, P);
+      add(cyl(1.08,.04), M.black, lx,ly,fz+2.7, P);
+      const gl = add(new THREE.SphereGeometry(.95,48,24,0,Math.PI*2,0,Math.PI/2), M.glass, lx,ly,fz+2.62, P); gl.scale.set(1,.26,1);
+      // back: eyepiece, live-view LCD, controls
+      add(ext(1.1,.85,.4,.25,.06), M.rubber, lx, top+.45, -fz-.18);
+      add(ext(.66,.44,.04,.08,.01), M.win, lx, top+.45, -fz-.39);
+      add(ext(2.9,2.0,.06,.12,.015), M.black, .45,-.35,-fz-.03);
+      add(new THREE.PlaneGeometry(2.7,1.8), screenMat, .45,-.35,-fz-.065, 0,Math.PI,0);
+      const hp = add(new THREE.PlaneGeometry(2.7,1.8), hudMat, .45,-.35,-fz-.07, 0,Math.PI,0); hp.renderOrder = 2;
+      [.55,.15,-.25,-.65,-1.05].forEach(y => add(cyl(.1,.06), M.body, 2.0, y, -fz-.02, P));
+      add(new THREE.TorusGeometry(.32,.07,10,32), M.body, -1.48, -.85, -fz-.04);
+      add(cyl(.09,.12), M.satin, -1.48, .3, -fz-.06, P);
+      [-1.3,-1.78].forEach(x => add(cyl(.13,.07), M.body, x, top-.38, -fz-.04, P));
+      g.scale.setScalar(.072); g.position.set(TX, TH + .16, TZ); g.rotation.y = Math.PI + .05;
+      g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      scene.add(g); g.updateMatrixWorld(true);
+      lv.position.copy(g.localToWorld(new THREE.Vector3(lx, ly, fz + 2.9))); lv.lookAt(0, .95, -2.15);
+    };
+    build();
+
+    // tripod
+    legs(TX, TZ, TH - .1, .5, .014, M.stand, .3);
+    rod([TX, .75, TZ], [TX, TH, TZ], .018, M.stand);
+    const head = new THREE.Mesh(new THREE.BoxGeometry(.11,.07,.11), M.black); head.position.set(TX, TH + .03, TZ); scene.add(head);
+    rod([TX, TH + .03, TZ + .05], [TX + .05, TH - .08, TZ + .32], .008, M.black);
+
+    // studio
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(40,40), M.floor); floor.rotation.x = -P; scene.add(floor);
+    const CW = 5.8, CZ = -3.3, CR = 1.0, CH = 3.4;
+    const cf = new THREE.Mesh(new THREE.PlaneGeometry(CW, 2.4), M.cyc); cf.rotation.x = -P; cf.position.set(0, .004, CZ + CR + 1.2); scene.add(cf);
+    const cg = new THREE.CylinderGeometry(CR, CR, CW, 40, 1, true, Math.PI, P); cg.rotateZ(P);
+    const cove = new THREE.Mesh(cg, M.cyc); cove.position.set(0, CR + .004, CZ + CR); scene.add(cove);
+    const wall = new THREE.Mesh(new THREE.PlaneGeometry(CW, CH - CR), M.cyc); wall.position.set(0, CR + (CH - CR)/2, CZ); scene.add(wall);
+    [-1, 1].forEach(s => rod([s*(CW/2+.14), 0, CZ+.06], [s*(CW/2+.14), CH+.2, CZ+.06], .022, M.stand));
+    rod([-CW/2-.14, CH+.14, CZ+.06], [CW/2+.14, CH+.14, CZ+.06], .024, M.stand);
+    rod([-CW/2, CH+.05, CZ+.02], [CW/2, CH+.05, CZ+.02], .09, M.cyc);
+
+    // stool
+    const SZ = -2.15;
+    const seat = new THREE.Mesh(cyl(.2,.05), [M.wood, M.woodTop, M.woodTop]); seat.position.set(0,.68,SZ); scene.add(seat);
+    legs(0, SZ, .66, .25, .014, M.wood, 0);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(.17,.008,8,40), M.wood); ring.rotation.x = P; ring.position.set(0,.3,SZ); scene.add(ring);
+
+    // softboxes
+    const softbox = (pos, target, w, power) => {
+      const s = new THREE.Group(); s.position.set(...pos);
+      const bg = new THREE.CylinderGeometry(.12, w*.71, .5, 4, 1, false); bg.rotateY(Math.PI/4); bg.rotateX(-P);
+      s.add(new THREE.Mesh(bg, M.stand));
+      const d = new THREE.Mesh(new THREE.PlaneGeometry(w*.9, w*.9), M.diff.clone()); d.position.z = .256; s.add(d);
+      s.lookAt(...target); scene.add(s); s.updateMatrixWorld(true);
+      const W = (x, y, z) => s.localToWorld(new THREE.Vector3(x, y, z)).toArray();
+      const mount = W(0, -w*.36, -.12), poleTop = [mount[0], mount[1] - .14, mount[2]];
+      rod(W(0, -w*.36, -.12), W(0, -.12, -.12), .014, M.stand);
+      rod(poleTop, mount, .016, M.stand);
+      rod([poleTop[0], .6, poleTop[2]], poleTop, .016, M.stand);
+      legs(poleTop[0], poleTop[2], .6, .42, .012, M.stand, 1);
+      const L = new THREE.SpotLight(0xfff1de, power, 0, .85, 1, 0); L.position.set(...W(0, 0, .3)); L.target.position.set(...target); scene.add(L, L.target);
+      return { d, L, power };
+    };
+    const lights = [softbox([-1.55,1.8,-1.05], [0,.9,SZ], .8, 2.6), softbox([1.75,1.45,-1.55], [0,.9,SZ], .55, 1.1)];
+    const kL = lights[0].L; kL.castShadow = true; kL.shadow.mapSize.set(1024,1024); kL.shadow.bias = -.0004; kL.shadow.camera.near = .3; kL.shadow.camera.far = 9;
+    const bgL = new THREE.SpotLight(0xffe9d2, 1.2, 0, .7, 1, 0); bgL.position.set(0,.35,-1.7); bgL.target.position.set(0,1.6,CZ); scene.add(bgL, bgL.target);
+    scene.add(new THREE.HemisphereLight(0xe2d8ca, 0x2a2622, .95));
+    const room = new THREE.PointLight(0xffe2c0, .7, 0, 0); room.position.set(1.6, 3.4, 2.4); scene.add(room);
+    const top = new THREE.DirectionalLight(0xffffff, .8); top.position.set(2,6,4); scene.add(top);
+
+    // case
+    const caseM = new THREE.MeshStandardMaterial({ color:0xa9a6a0, metalness:.85, roughness:.3 });
+    const foamM = new THREE.MeshStandardMaterial({ color:0x2e2d2b, roughness:1, bumpMap:noise(6), bumpScale:.03 });
+    const csG = new THREE.Group(); csG.position.set(1.35, 0, 1.45); csG.rotation.y = -.5; csG.scale.setScalar(.65); scene.add(csG);
+    const CWd = .78, CDp = .56, CHt = .2, wt = .02;
+    const bx = (w, hh, d, m, x, y, z, par = csG) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, hh, d), m); o.position.set(x, y, z); par.add(o); return o; };
+    bx(CWd, wt, CDp, caseM, 0, wt/2, 0);
+    bx(CWd, CHt, wt, caseM, 0, CHt/2, CDp/2); bx(CWd, CHt, wt, caseM, 0, CHt/2, -CDp/2);
+    bx(wt, CHt, CDp, caseM, CWd/2, CHt/2, 0); bx(wt, CHt, CDp, caseM, -CWd/2, CHt/2, 0);
+    bx(CWd+.01, .015, CDp+.01, M.black, 0, CHt, 0).scale.set(1, 1, 1);
+    bx(CWd-.04, .02, CDp-.04, M.black, 0, CHt+.002, 0).visible = false;
+    bx(CWd-wt*2, CHt-.05, CDp-wt*2, foamM, 0, (CHt-.05)/2 + wt, 0);
+    const lens = (x, z, r, hh) => { const lg = new THREE.Group(); lg.position.set(x, CHt-.06, z); csG.add(lg);
+      const b1 = new THREE.Mesh(new THREE.CylinderGeometry(r, r, hh, 32), M.body); b1.position.y = hh/2; lg.add(b1);
+      const rg = new THREE.Mesh(new THREE.CylinderGeometry(r+.004, r+.004, hh*.35, 32), M.rubber); rg.position.y = hh*.55; lg.add(rg);
+      const rd = new THREE.Mesh(new THREE.CylinderGeometry(r+.005, r+.005, .006, 32), M.red); rd.position.y = hh*.86; lg.add(rd);
+      const gls = new THREE.Mesh(new THREE.SphereGeometry(r*.82, 24, 12, 0, Math.PI*2, 0, Math.PI/2), M.glass); gls.scale.y = .25; gls.position.y = hh; lg.add(gls); };
+    lens(-.2, -.06, .085, .17); lens(.04, .08, .07, .12);
+    const pocket = new THREE.Mesh(new THREE.CircleGeometry(.064, 32), new THREE.MeshBasicMaterial({ color:0x080808 })); pocket.rotation.x = -P; pocket.position.set(.24, CHt - .05 + wt + .002, -.08); csG.add(pocket);
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, .02, 24), M.black); cap.position.set(.25, CHt-.04, .14); csG.add(cap);
+    const lid = new THREE.Group(); lid.position.set(0, CHt, -CDp/2); lid.rotation.x = -1.85; csG.add(lid);
+    bx(CWd, wt, CDp, caseM, 0, -wt/2, CDp/2, lid);
+    bx(CWd, .08, wt, caseM, 0, -.04, CDp, lid); bx(wt, .08, CDp, caseM, CWd/2, -.04, CDp/2, lid); bx(wt, .08, CDp, caseM, -CWd/2, -.04, CDp/2, lid);
+    for (let i = 0; i < 7; i++) for (let j = 0; j < 5; j++) { const e = new THREE.Mesh(new THREE.SphereGeometry(.035, 10, 6, 0, Math.PI*2, 0, Math.PI/2), foamM);
+      e.rotation.x = Math.PI; e.position.set(-CWd/2 + .07 + i*(CWd-.14)/6, -wt, .07 + j*(CDp-.14)/4); lid.add(e); }
+    [-.22, .22].forEach(x => bx(.05, .04, .02, M.chrome, x, CHt-.02, CDp/2+.012));
+    const hd = new THREE.Mesh(new THREE.TorusGeometry(.07,.012,8,20,Math.PI), M.black); hd.position.set(0, CHt*.55, CDp/2+.015); csG.add(hd);
+
+    // drying line + category prints
+    const A = [-2.05, 2.0, -.3], Bp = [-3.25, 2.0, 1.65];
+    rod(A, Bp, .004, M.line);
+    [A, Bp].forEach(p => { rod([p[0], .6, p[2]], [p[0], p[1] + .06, p[2]], .014, M.stand); legs(p[0], p[2], .6, .35, .01, M.stand, .8); });
+    const prints = CATS.map((k, i) => {
+      const c = document.createElement('canvas'); c.width = 600; c.height = 760; const x = c.getContext('2d');
+      x.fillStyle = '#efebe4'; x.fillRect(0,0,600,760);
+      const gr = x.createLinearGradient(0,40,0,600); gr.addColorStop(0, ['#3d3632','#2c2d33','#3b2f2a','#2f3530'][i % 4]); gr.addColorStop(1, '#131110');
+      x.fillStyle = gr; x.fillRect(40,40,520,560);
+      x.fillStyle = '#ece8e1'; x.textAlign = 'center'; x.font = "italic 112px 'Instrument Serif'"; x.fillText(k.name, 300, 350);
+      const n = k.cols.reduce((s, ci) => s + COLS[ci].titles.length, 0);
+      x.fillStyle = '#5a534a'; x.font = "500 22px 'IBM Plex Mono'"; x.textAlign = 'left'; x.fillText(String(i+1).padStart(2,'0') + ' · ' + k.sub, 40, 668);
+      x.textAlign = 'right'; x.fillText(n + ' PHOTOS', 560, 668);
+      const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
+      const t = (i + .5) / CATS.length, pv = new THREE.Group();
+      pv.position.set(A[0] + (Bp[0]-A[0])*t, A[1], A[2] + (Bp[2]-A[2])*t); pv.rotation.y = 1.0;
+      const mat = new THREE.MeshStandardMaterial({ map:tex, roughness:.75, side:THREE.DoubleSide, emissive:0xffffff, emissiveIntensity:0, emissiveMap:tex });
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(.5,.633), mat); m.position.y = -.34; m.userData.cat = i; pv.add(m);
+      [-.17, .17].forEach(cx2 => { const cl = new THREE.Mesh(new THREE.BoxGeometry(.025,.06,.02), M.wood); cl.position.set(cx2, -.02, 0); pv.add(cl); });
+      scene.add(pv);
+      return { pv, m, mat, sway:0 };
+    });
+    scene.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    lights.forEach(l => { l.d.castShadow = false; });
+    floor.castShadow = false;
+
+    // interaction
+    const T = new THREE.Vector3(-.55, 1.05, -.95);
+    const tgt = T.clone(), Ft = T.clone(), zRay = new THREE.Raycaster(), zPtr = new THREE.Vector2(), MINR = 1.8;
+    let rT = null, extra = 3.5;
+    let th = .62, ph = 1.2, vth = 0, vph = 0, base = 6, rad = 9.5, drag = false, press = 0, flashT = 0, hover = null;
+    const oRay = new THREE.Raycaster(), t0 = performance.now(), ray = new THREE.Raycaster(), ptr = new THREE.Vector2(), v3 = new THREE.Vector3();
+    const pick = e => { const r = el.getBoundingClientRect(); ptr.set((e.clientX-r.left)/r.width*2-1, -(e.clientY-r.top)/r.height*2+1);
+      ray.setFromCamera(ptr, view); const hit = ray.intersectObjects([g, ...prints.map(p => p.m)], true)[0]; if (!hit) return null;
+      return hit.object.userData.cat !== undefined ? hit.object.userData.cat : 'cam'; };
+    el.addEventListener('pointerdown', e => {
+      const x0 = e.clientX, y0 = e.clientY; let px = x0, py = y0, moved = false; drag = true; el.style.cursor = 'grabbing';
+      const mv = ev => { const dx = ev.clientX-px, dy = ev.clientY-py; px = ev.clientX; py = ev.clientY;
+        if (Math.hypot(ev.clientX-x0, ev.clientY-y0) > 4) moved = true;
+        vth = -dx*.004; vph = -dy*.003; th = Math.max(-1.1, Math.min(1.3, th+vth)); ph = Math.max(.8, Math.min(1.48, ph+vph)); };
+      const upF = ev => { removeEventListener('pointermove', mv); removeEventListener('pointerup', upF); drag = false; el.style.cursor = 'grab';
+        if (moved) return; const hit = pick(ev);
+        if (hit === 'cam') this.fire(); else if (hit !== null) this.fire(() => this.goCat(hit)); };
+      addEventListener('pointermove', mv); addEventListener('pointerup', upF);
+    });
+    el.addEventListener('pointermove', e => { if (drag) return; const h = pick(e); if (h !== hover && h !== null) { SFX.unlock(); h === 'cam' ? SFX.tick() : SFX.hoverPrint(); } hover = h; el.style.cursor = hover !== null ? 'pointer' : 'grab'; });
+    const resize = () => { const W = host.clientWidth, H = host.clientHeight; renderer.setSize(W,H); view.aspect = W/H; view.updateProjectionMatrix();
+      const pts = [new THREE.Vector3(...A), new THREE.Vector3(...Bp), new THREE.Vector3(Bp[0], A[1]-.7, Bp[2]), new THREE.Vector3(0, 1.0, 0)];
+      prints.forEach(p => { pts.push(p.pv.position.clone(), p.pv.position.clone().add(new THREE.Vector3(0,-.7,0))); });
+      let nb = Math.max(6, Math.min(11, 8.6/view.aspect));
+      for (; nb < 20; nb += .25) {
+        view.position.set(T.x + nb*Math.sin(ph)*Math.sin(th), T.y + nb*Math.cos(ph), T.z + nb*Math.sin(ph)*Math.cos(th)); view.lookAt(T); view.updateMatrixWorld();
+        if (pts.every(q => { const s = q.clone().project(view); return Math.abs(s.x) < .9 && Math.abs(s.y) < .9; })) break; }
+      base = nb; };
+    resize(); addEventListener('resize', resize); this.offResize3 = () => removeEventListener('resize', resize);
+    const zoomAt = (d, ev) => {
+      const r0 = rT ?? base, r1 = Math.max(MINR, Math.min(base*1.35, r0 * Math.exp(d*.0014)));
+      if (r1 === r0) return;
+      if (r1 < r0) {
+        let hitP = null;
+        if (ev) { const b = el.getBoundingClientRect(); zPtr.set((ev.clientX-b.left)/b.width*2-1, -(ev.clientY-b.top)/b.height*2+1); zRay.setFromCamera(zPtr, view);
+          const hit = zRay.intersectObjects(scene.children.filter(o => !o.isLight), true)[0]; if (hit) hitP = hit.point; }
+        if (!hitP) hitP = view.position.clone().add(view.getWorldDirection(v3).multiplyScalar(r0));
+        Ft.sub(hitP).multiplyScalar(r1/r0).add(hitP);
+      } else if (r0 < base) {
+        const k = Math.max(0, (base - r1) / (base - r0)); Ft.sub(T).multiplyScalar(k).add(T);
+      }
+      rT = r1;
+    };
+    this.three = { zoom: zoomAt, press: () => { press = 1; flashT = 1; }, reset: () => { extra = 1.6; rT = null; Ft.copy(T); tgt.copy(T); if (!this.raf) loop(); } };
+    const loop = () => {
+      const phase = this.state.phase;
+      if (phase === 'archive') { this.raf = 0; return; }
+      this.raf = requestAnimationFrame(loop);
+      const t = (performance.now()-t0)/1000;
+      if (!drag) { vth *= .92; vph *= .88; th = Math.max(-1.1, Math.min(1.3, th+vth)); ph = Math.max(.8, Math.min(1.48, ph+vph)); }
+      if (phase === 'intro') extra *= .965;
+      const want = (rT ?? base) + extra; rad += (want - rad) * .09; tgt.lerp(Ft, .09);
+      const e = Math.max(0, Math.min(1, (base - rad) / (base - MINR)));
+      const thd = th + Math.sin(t*.22)*.05*(1 - e), phd = ph;
+      view.position.set(tgt.x + rad*Math.sin(phd)*Math.sin(thd), tgt.y + rad*Math.cos(phd), tgt.z + rad*Math.sin(phd)*Math.cos(thd)); view.lookAt(tgt);
+      press = Math.max(0, press-.05); sh.position.y = SHY - Math.sin(press*Math.PI)*.08;
+      shMat.emissive.setHex(hover === 'cam' ? 0x5a3a0c : 0x000000);
+      const wantHud = hover === 'cam' ? hudG : hudW; if (hudMat.map !== wantHud) { hudMat.map = wantHud; hudMat.needsUpdate = true; }
+      flashT *= .86;
+      lights.forEach(l => { l.L.intensity = l.power + flashT*16; l.d.material.emissiveIntensity = 1.1 + flashT*5; });
+      prints.forEach((p, i) => { p.sway += ((hover === i ? -.22 : 0) - p.sway) * .12;
+        p.pv.rotation.x = Math.sin(t*1.2 + i*1.7)*.03 + p.sway; p.mat.emissiveIntensity = hover === i ? .12 : 0; });
+      const tip = this.tipRef.current;
+      if (tip && (this.frameN || 0) % 6 === 0) { sh.getWorldPosition(v3); const dist = v3.distanceTo(view.position);
+        oRay.set(view.position, v3.clone().sub(view.position).normalize()); oRay.far = dist - .03;
+        const occ = oRay.intersectObjects(scene.children.filter(o => o !== g && !o.isLight), true).length > 0;
+        tip.style.opacity = occ || e > .5 ? '0' : '1'; }
+      if (tip) { sh.getWorldPosition(v3); v3.y += .03; v3.project(view);
+        tip.style.transform = `translate(${(v3.x+1)/2*host.clientWidth}px,${(1-v3.y)/2*host.clientHeight}px)`; }
+      if ((this.frameN = (this.frameN || 0) + 1) % 2 === 0) { g.visible = false; renderer.setRenderTarget(rt); renderer.render(scene, lv); renderer.setRenderTarget(null); g.visible = true; }
+      renderer.render(scene, view);
+    };
+    renderer.compile(scene, view);
+    loop();
+    requestAnimationFrame(() => { this.ready3 = true; });
+  }
+  toStudio(){
+    if (this.firing || this.state.phase !== 'archive') return;
+    this.firing = true;
+    SFX.shutter();
+    this.setState({ shut:true });
+    setTimeout(() => { this.setState({ phase:'intro', focus:null }); if (this.three) this.three.reset(); }, 240);
+    setTimeout(() => { this.setState({ shut:false }); this.firing = false; }, 420);
+  }
+  getView(){ return this.pending || this.lastV || { pan:this.state.pan, z:this.state.z }; }
+  syncHi(){ const f = this.state.focus;
+    if (this._hiId === f) return;
+    const old = this._hiEl; if (old) { old.style.opacity = '0'; setTimeout(() => old.remove(), 300); this._hiEl = null; }
+    this._hiId = f; const p = f != null && this.photos.find(q => q.id === f);
+    if (!p || !p.src) return;
+    const hi = new Image(); hi.alt = ''; hi.draggable = false;
+    hi.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;pointer-events:none;opacity:0;transition:opacity .3s ease;';
+    hi.src = p.src;
+    (hi.decode ? hi.decode() : new Promise(r => hi.onload = r)).then(() => {
+      if (this._hiId !== f) return; const base = (this._imgEls || {})[f]; if (!base || !base.parentNode) return;
+      base.parentNode.appendChild(hi); this._hiEl = hi; requestAnimationFrame(() => { hi.style.opacity = '1'; });
+    }).catch(() => {}); }
+  componentDidUpdate(){ this.syncHi(); if (this.lastV && this.state.pan === this.lastV.pan) this.lastV = null;
+    if (this._zEl) { const img = this._zEl.querySelector('[data-zimg]'); if (img && img.dataset.src && img.getAttribute('src') !== img.dataset.src) this.zApply(); }
+    const fe = this.fpRef.current; if (fe && this.state.vw < 900) { const sh = fe.offsetHeight; if (Math.abs(sh - (this.state.sheetH || 0)) > 2) this.setState({ sheetH:sh }); } }
+  applyView(v){ const w = this.worldRef.current; if (w) { w.style.transition = 'none'; w.style.willChange = 'transform'; w.style.transform = `translate(${v.pan.x}px,${v.pan.y}px) scale(${v.z})`; }
+    const now = performance.now(); if (now - (this.lastCommit || 0) > 220) { this.lastCommit = now; this.commitView(); } }
+  commitView(){ clearTimeout(this.commitT); if (this.pending) { const v = this.pending; this.pending = null; this.lastV = v; this.setState({ anim:false, pan:v.pan, z:v.z }); }
+    clearTimeout(this.wcT); this.wcT = setTimeout(() => { const w = this.worldRef.current; if (w && !this.pending) w.style.willChange = 'auto'; }, 400); }
+
+  inset(){ return this.state.tagsOpen && this.state.vw >= 900 ? 270 : 0; }
+  camTo(cx, cy, z, top = 110, bot = 110){ clearTimeout(this.commitT); this.pending = null; this.lastV = null; const { vw, vh } = this.state, L = this.inset(); this.setState({ anim:true, z, pan:{ x:L+(vw-L)/2-cx*z, y:top+(vh-top-bot)/2-cy*z } }); }
+  fit(x0, y0, x1, y1, bot = 110){
+    const { vw, vh } = this.state, top = 110;
+    if (this.state.phase === 'archive' && !this.firing) SFX.whoosh();
+    this.camTo((x0+x1)/2, (y0+y1)/2, Math.min((vw-this.inset()-80)/(x1-x0), (vh-top-bot)/(y1-y0)), top, bot);
+  }
+  hasSel(sel){ return Object.values(sel).some(a => a && a.length); }
+  match(p, sel, skip){ return TAGS.every(g => g.key === skip || !(sel[g.key] && sel[g.key].length) || sel[g.key].includes(p.tags[g.key])); }
+  gather(sel){
+    const m = this.photos.filter(p => this.match(p, sel));
+    const n = m.length, cols = Math.max(2, Math.round(Math.sqrt(n*1.6))), rows = Math.ceil(n/cols), cy = (B.y0+B.y1)/2;
+    const pos = {};
+    m.forEach((p, i) => { const c = i%cols, r = Math.floor(i/cols);
+      pos[p.id] = { x:(c-(cols-1)/2)*360 - p.w/2, y:cy + (r-(rows-1)/2)*420 - p.h/2 }; });
+    const hw = cols*180, hh = rows*210;
+    return { list:m, pos, bounds:[-hw-40, cy-hh-40, hw+40, cy+hh+40] };
+  }
+  applyFilter(sel){
+    if (!this.hasSel(sel)) return this.overview();
+    this.setState({ sel, cat:null, active:null, focus:null });
+    const G = this.gather(sel);
+    if (G.list.length) this.fit(...G.bounds);
+  }
+  toggleTag(k, v){
+    const cur = this.state.sel[k] || [];
+    this.applyFilter({ ...this.state.sel, [k]: cur.includes(v) ? cur.filter(x => x !== v) : cur.concat(v) });
+  }
+  overview(){ this.setState({ active:null, cat:null, focus:null, sel:{} }); this.fit(B.x0, B.y0, B.x1, B.y1); }
+  goCat(k){
+    const cat = CATS[k];
+    if (cat.cols.length === 1) return this.goCol(cat.cols[0]);
+    const f = this.frames[k];
+    this.setState({ cat:k, active:null, focus:null, sel:{} });
+    this.fit(f.x0, f.y0 - 340, f.x1, f.y1 + 20, 170);
+  }
+  goCol(ci){
+    const c = COLS[ci];
+    this.setState({ cat:c.cat, active:ci, focus:null, sel:{} });
+    const ps = this.photos.filter(p => p.ci === ci);
+    const single = CATS[c.cat].cols.length === 1;
+    const top = single ? this.frames[c.cat].y0 - 340 : c.labelY - 20;
+    this.fit(Math.min(...ps.map(p => p.tx)) - 80, top, Math.max(...ps.map(p => p.tx + p.w)) + 80, Math.max(...ps.map(p => p.ty + p.h)) + 60, single ? 110 : 170);
+  }
+  open(id){
+    const p = this.photos.find(q => q.id === id);
+    if (this.hasSel(this.state.sel)) this.setState({ focus:id, anim:false });
+    else this.setState({ focus:id, active:p.ci, cat:COLS[p.ci].cat, anim:false });
+  }
+  close(){ if (this.state.focus) this.setState({ focus:null, zoom:false }); }
+  zApply(){ const el = this._zEl; if (!el) return; const img = el.querySelector('[data-zimg]'), v = this.zv;
+    const want = img.dataset.src; if (want && !want.includes('{{') && img.getAttribute('src') !== want) { img.src = want; img.onload = () => this.zApply(); }
+    const W = el.clientWidth, H = el.clientHeight, iw = img.offsetWidth*v.s, ih = img.offsetHeight*v.s;
+    const mx = Math.max(0, (iw - W)/2 + 40), my = Math.max(0, (ih - H)/2 + 40);
+    v.x = Math.max(-mx, Math.min(mx, v.x)); v.y = Math.max(-my, Math.min(my, v.y));
+    img.style.transform = `translate(${v.x}px,${v.y}px) scale(${v.s})`;
+    const pc = el.querySelector('[data-zpct]'); if (pc) pc.textContent = Math.round(v.s*100) + '%';
+    el.style.cursor = v.s > 1.01 ? 'grab' : 'zoom-in'; }
+  zMax(){ const img = this._zEl && this._zEl.querySelector('[data-zimg]'); return img && img.naturalWidth ? Math.max(4, img.naturalWidth/img.offsetWidth*1.5) : 6; }
+  zBy(k, px = 0, py = 0, anim = true){ const v = this.zv; if (!v) return; const s = Math.max(1, Math.min(this.zMax(), v.s*k)), r = s/v.s;
+    v.x = px - (px - v.x)*r; v.y = py - (py - v.y)*r; v.s = s;
+    const img = this._zEl && this._zEl.querySelector('[data-zimg]'); if (img) img.style.transition = anim ? 'transform .25s cubic-bezier(.22,1,.36,1)' : 'none';
+    this.zApply(); }
+  zoomRef = el => {
+    if (this._zEl === el) return;
+    if (this._zOff) { this._zOff(); this._zOff = null; }
+    this._zEl = el; this.zv = { s:1, x:0, y:0 }; if (!el) return; this.zApply();
+    const rel = e => { const r = el.getBoundingClientRect(); return [e.clientX - r.left - r.width/2, e.clientY - r.top - r.height/2]; };
+    const wheel = e => { e.preventDefault(); this.zBy(Math.exp(-e.deltaY*.0018), ...rel(e), false); };
+    const pts = new Map(); let last = null, pinch = null, moved = 0;
+    const down = e => { if (e.target.closest('[data-zui]')) return; el.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]); moved = 0;
+      if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = Math.hypot(a[0]-b[0], a[1]-b[1]); } last = [e.clientX, e.clientY]; };
+    const move = e => { if (!pts.has(e.pointerId)) return; pts.set(e.pointerId, [e.clientX, e.clientY]);
+      if (pts.size === 2 && pinch) { const [a, b] = [...pts.values()], d = Math.hypot(a[0]-b[0], a[1]-b[1]);
+        this.zBy(d/pinch, ...rel({ clientX:(a[0]+b[0])/2, clientY:(a[1]+b[1])/2 }), false); pinch = d; moved = 99; return; }
+      const dx = e.clientX - last[0], dy = e.clientY - last[1]; last = [e.clientX, e.clientY]; moved += Math.abs(dx) + Math.abs(dy);
+      if (this.zv.s > 1) { this.zv.x += dx; this.zv.y += dy; el.querySelector('[data-zimg]').style.transition = 'none'; this.zApply(); el.style.cursor = 'grabbing'; } };
+    const up = e => { pts.delete(e.pointerId); if (pts.size < 2) pinch = null; if (pts.size === 1) last = [...pts.values()][0];
+      if (!pts.size) { const onImg = e.target.closest && e.target.closest('[data-zimg]');
+        if (moved < 4 && !e.target.closest('[data-zui]')) { if (onImg && this.zv.s <= 1.01) this.zBy(2.5, ...rel(e)); else if (!onImg && this.zv.s <= 1.01) this.setState({ zoom:false }); }
+        this.zApply(); } };
+    const dbl = e => { if (e.target.closest('[data-zui]')) return; if (this.zv.s > 1.01) { this.zv = { s:1, x:0, y:0 }; el.querySelector('[data-zimg]').style.transition = 'transform .25s cubic-bezier(.22,1,.36,1)'; this.zApply(); } };
+    const rs = () => this.zApply();
+    el.addEventListener('wheel', wheel, { passive:false }); el.addEventListener('pointerdown', down); el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('dblclick', dbl); addEventListener('resize', rs);
+    this._zOff = () => { el.removeEventListener('wheel', wheel); el.removeEventListener('pointerdown', down); el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up); el.removeEventListener('dblclick', dbl); removeEventListener('resize', rs); };
+  };
+  focusList(){
+    const p = this.photos.find(q => q.id === this.state.focus);
+    return this.hasSel(this.state.sel) ? this.gather(this.state.sel).list : this.photos.filter(q => q.ci === p.ci);
+  }
+  step(d){
+    const list = this.focusList(), i = list.findIndex(q => q.id === this.state.focus);
+    this.setState({ focus: list[(i + d + list.length) % list.length].id });
+    if (this.zv) { this.zv = { s:1, x:0, y:0 }; setTimeout(() => this.zApply(), 0); }
+  }
+
+  openZoom = () => this.setState({ zoom:true });
+  _preload(){
+    const q = this.photos.filter(p => p.src).map(p => webOf(p.src));
+    const idle = window.requestIdleCallback || (f => setTimeout(f, 120));
+    const next = () => { if (!q.length || this._dead) return; const src = q.shift();
+      fetch(src, { priority:'low' }).then(r => r.blob()).catch(() => {}).then(() => idle(next)); };
+    idle(next);
+  }
+  onDown = e => {
+    if (e.button !== 0 || this.state.phase !== 'archive') return;
+    const t = e.target;
+    if (t.closest('button') || t.closest('[data-panel]')) return;
+    if (this.state.focus && t.closest(`[data-pid="${this.state.focus}"]`)) return;
+    const tp = this.tp || (this.tp = new Map());
+    if (!this._dragOn) tp.clear();
+    tp.set(e.pointerId, [e.clientX, e.clientY]);
+    if (this._dragOn) { if (tp.size === 2 && !this.state.focus) { const [a, b] = [...tp.values()]; this.pinch = Math.hypot(a[0]-b[0], a[1]-b[1]); } return; }
+    this._dragOn = true; this.pinch = null;
+    this.commitView();
+    const v0 = this.getView(); let start = { x:e.clientX, y:e.clientY, pan:v0.pan, z:v0.z }, resync = false;
+    let moved = false;
+    const mv = ev => {
+      if (tp.has(ev.pointerId)) tp.set(ev.pointerId, [ev.clientX, ev.clientY]);
+      if (this.pinch && tp.size === 2) { const [a, b] = [...tp.values()], d = Math.hypot(a[0]-b[0], a[1]-b[1]), cx = (a[0]+b[0])/2, cy = (a[1]+b[1])/2;
+        const { z, pan } = this.getView(), nz = Math.min(1.6, Math.max(.1, z * d / this.pinch)); this.pinch = d; moved = true; resync = true;
+        this.pending = { z:nz, pan:{ x:cx-(cx-pan.x)*nz/z, y:cy-(cy-pan.y)*nz/z } }; this.applyView(this.pending); return; }
+      if (ev.pointerId !== e.pointerId) return;
+      if (resync) { const v = this.getView(); start = { x:ev.clientX, y:ev.clientY, pan:v.pan, z:v.z }; resync = false; return; }
+      const dx = ev.clientX-start.x, dy = ev.clientY-start.y;
+      if (!moved && Math.hypot(dx,dy) > 4) { moved = true; if (this.rootRef.current) this.rootRef.current.style.cursor = 'grabbing'; }
+      if (moved && !this.state.focus) { this.pending = { z:start.z, pan:{ x:start.pan.x+dx, y:start.pan.y+dy } }; this.applyView(this.pending); }
+    };
+    const up = ev => {
+      tp.delete(ev.pointerId); if (tp.size < 2) { if (this.pinch) resync = true; this.pinch = null; }
+      if (ev.pointerId !== e.pointerId) return;
+      this._dragOn = false;
+      removeEventListener('pointermove', mv); removeEventListener('pointerup', up); removeEventListener('pointercancel', up);
+      if (this.rootRef.current) this.rootRef.current.style.cursor = '';
+      this.commitView();
+      if (moved) return;
+      if (this.state.focus) return this.close();
+      const pe = t.closest('[data-pid]'), ce = t.closest('[data-col]'), ke = t.closest('[data-cat]');
+      if (pe) this.open(pe.dataset.pid);
+      else if (ce) this.goCol(COLS.findIndex(c => c.id === ce.dataset.col));
+      else if (ke) this.goCat(+ke.dataset.cat);
+    };
+    addEventListener('pointermove', mv); addEventListener('pointerup', up); addEventListener('pointercancel', up);
+  };
+
+  renderVals(){
+    const { pan, z, focus, cat, active, anim, vw, vh, dragging, sel, tagsOpen } = this.state;
+    const filt = this.hasSel(sel), G = filt ? this.gather(sel) : null;
+    const tilt = this.props.tilt ?? 5;
+    const fIdx = focus ? this.photos.findIndex(p => p.id === focus) : -1;
+    const vk = pan.x + ',' + pan.y + ',' + z;
+    if (this._vk !== vk) { this._prevV = this._curV; this._curV = { pan, z }; this._vk = vk; }
+    const views = [this._curV, this._prevV].filter(Boolean), live = this.state.phase === 'archive';
+    if (live && !this._preloading) { this._preloading = true; this._preload(); }
+    const onScreen = (x, y, w, h) => views.some(v => { const X = v.pan.x + x*v.z, Y = v.pan.y + y*v.z, W = w*v.z, H = h*v.z;
+      return X < vw*1.4 && X + W > -vw*.4 && Y < vh*1.4 && Y + H > -vh*.4; });
+    const inScope = ci => active !== null ? ci === active : (cat === null || COLS[ci].cat === cat);
+    const photos = this.photos.map(p => {
+      let x = p.sx, y = p.sy, rot = p.rot*tilt, s = 1, op = 1, zi = 1, filter = 'none';
+      if (filt) { const g = G.pos[p.id];
+        if (g) { x = g.x; y = g.y; rot = p.rot*tilt*.15; zi = 2; } else { op = .05; filter = 'grayscale(1)'; } }
+      else if (!inScope(p.ci)) { op = .4; }
+      else if (active !== null) { x = p.tx; y = p.ty; rot = p.rot*tilt*.15; zi = 2; }
+      if (focus) {
+        if (p.id === focus) {
+          const nar = vw < 900, T0 = nar ? (vw < 640 ? 92 : 110) : 120, B0 = nar ? (this.state.sheetH || 340) + 16 : 32;
+          const maxH = vh - T0 - B0, maxW = nar ? vw - 32 : vw*.56;
+          let sh = maxH, sw = sh*p.ar; if (sw > maxW) { sw = maxW; sh = sw/p.ar; }
+          s = sw / z / p.w; const fw = p.w * s, fh = (p.w / p.ar + 20) * s;
+          x = ((nar ? vw : vw - Math.min(360, vw*.34))/2 - pan.x)/z - fw/2;
+          y = ((T0 + vh - B0)/2 - pan.y)/z - fh/2;
+          rot = 0; op = 1; zi = 10; filter = 'none';
+        } else { op = .05; }
+      }
+      const seen = this._seen || (this._seen = new Set());
+      const showImg = !!p.src && live && (seen.has(p.id) || p.id === focus || (op > .1 && onScreen(x, y, p.w*s, p.h*s)));
+      if (showImg) seen.add(p.id);
+      const rc = this._imgRefs || (this._imgRefs = {});
+      const imgRef = rc[p.id] || (rc[p.id] = el => { const ie = this._imgEls || (this._imgEls = {}); ie[p.id] = el; const u = webOf(p.src); if (el && u && el.getAttribute('src') !== u) el.src = u; });
+      return { imgRef, zoom: p.id === focus ? this.openZoom : undefined, id:p.id, slot:'photo-'+p.id, ph:p.title, src:p.src || '', bg: p.src ? `url("${p.src}")` : 'none', showImg, noSrc:!p.src, title:p.title, code:`${COLS[p.ci].id.toUpperCase()}-${String(p.i+1).padStart(2,'0')}`,
+        ar:p.ar, w:p.w, tf:`translate(${x}px,${y}px) rotate(${rot}deg) scale(${s})`, op, zi, filter, pe: p.id === focus ? 'auto' : 'none' };
+    });
+    const regions = CATS.map((k, i) => { const f = this.frames[i];
+      return { idx:i, name:k.name, sub:k.sub, num:String(i+1).padStart(2,'0'), tf:`translate(${f.x0}px,${f.y0}px)`, w:f.x1-f.x0, h:f.y1-f.y0,
+        op: focus ? 0 : filt ? .1 : (cat === null || cat === i ? 1 : .55), hOp: active !== null && k.cols.length > 1 && i !== 2 ? 0 : 1 }; });
+    const islands = COLS.filter(c => CATS[c.cat].cols.length > 1 && c.cat !== 2).map(c => { const ci = COLS.indexOf(c);
+      return { id:c.id, name:c.name, count:c.titles.length, tf:`translate(${c.cx-600}px,${c.labelY}px)`, pe: filt ? 'none' : 'auto',
+        op: focus || filt ? 0 : (inScope(ci) ? 1 : .55) }; });
+    const total = k => k.cols.reduce((s, ci) => s + COLS[ci].titles.length, 0);
+    const glass = !!this.props.glassTabs;
+    const pill = on => glass
+      ? { bg: on ? 'linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,.14))' : 'transparent', fg: on ? '#ffffff' : '#d8d2c8', sh: on ? 'inset 0 1px 0 rgba(255,255,255,.55),inset 0 -1px 0 rgba(255,255,255,.12),0 4px 14px rgba(0,0,0,.25)' : 'none' }
+      : { bg: on ? '#ece8e1' : 'transparent', fg: on ? '#171513' : '#b8b0a4', sh:'none' };
+    const tabBar = glass
+      ? { bg:'linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.05))', bd:'rgba(255,255,255,.22)', bf:'blur(22px) saturate(180%)', sh:'inset 0 1px 0 rgba(255,255,255,.35),inset 0 -1px 1px rgba(255,255,255,.08),0 12px 32px rgba(0,0,0,.35)' }
+      : { bg:'rgba(23,21,19,.94)', bd:'#2e2a26', bf:'none', sh:'none' };
+    const nav = [{ label:'All', count:this.photos.length, go:() => this.overview(), ...pill(cat === null && !filt) }]
+      .concat(CATS.map((k, i) => ({ label:k.name, count:total(k), go:() => this.goCat(i), ...pill(cat === i) })));
+    const tagGroups = TAGS.map(g => ({ label:g.label.toUpperCase(), tags: g.vals.map(v => {
+      const on = !!(sel[g.key] && sel[g.key].includes(v));
+      const count = this.photos.filter(p => p.tags[g.key] === v && this.match(p, sel, g.key)).length;
+      return { label:'#'+v, count, toggle:() => this.toggleTag(g.key, v),
+        bg: on ? '#ece8e1' : 'transparent', fg: on ? '#171513' : count ? '#c9c1b5' : '#5a534a', bd: on ? '#ece8e1' : '#3a352f' }; }) }));
+    const matchText = filt ? (G.list.length ? `${G.list.length} OF ${this.photos.length} PHOTOGRAPHS` : 'NO PHOTOGRAPHS MATCH') : `${this.photos.length} PHOTOGRAPHS`;
+    const subCat = cat !== null && cat !== 2 && CATS[cat].cols.length > 1 ? CATS[cat] : null;
+    const subnav = subCat ? subCat.cols.map(ci => ({ label:COLS[ci].name.replace(/\s*\d{4}(–\d{4})?$/, ''), count:COLS[ci].titles.length, go:() => active === ci ? this.goCat(cat) : this.goCol(ci), ...pill(active === ci) })) : [];
+    const mw = 180, ms = mw/(B.x1-B.x0), mh = (B.y1-B.y0)*ms;
+    const mini = { w:mw, h:Math.round(mh),
+      dots: this.photos.map(p => ({ x:(p.sx-B.x0)*ms, y:(p.sy-B.y0)*ms, w:Math.max(3,p.w*ms), h:Math.max(3,p.h*ms),
+        c: (filt ? !!G.pos[p.id] : inScope(p.ci)) ? '#8f877c' : '#3a352f' })),
+      vx:(-pan.x/z-B.x0)*ms, vy:(-pan.y/z-B.y0)*ms, vw:vw/z*ms, vh:vh/z*ms };
+    const fp = fIdx >= 0 ? (() => { const p = this.photos[fIdx], c = COLS[p.ci], list = this.focusList(), i = list.indexOf(p);
+      return { title:p.title, colName: filt ? 'FILTERED' : c.name.toUpperCase(), pos:`${String(i+1).padStart(2,'0')} / ${String(list.length).padStart(2,'0')}`,
+        place:PLACES[p.tags.place], year:p.year, cam:p.cam, film:p.film || '', hasFilm:!!p.film, hasSrc:!!p.src,
+        tags: TAGS.map(g => ({ label:'#'+p.tags[g.key], go:() => this.applyFilter({ [g.key]:[p.tags[g.key]] }) })) }; })() : { tags:[] };
+    const hideMini = !!focus || vw < 1240; const showHints = !focus && vw >= 640;
+    const touch = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches, sm = vw < 640, nar = vw < 900;
+    const fpS = nar ? { top:'auto', left:'0', w:'auto', mh:'55dvh', pad: sm ? '18px 20px 22px' : '24px 32px 28px', gap: sm ? '14px' : '18px', bg:'rgba(18,16,14,.96)', bt:'1px solid #2e2a26', br:'20px 20px 0 0', tf: sm ? '32px' : '42px' }
+      : { top:'0', left:'auto', w:'min(360px,34vw)', mh:'none', pad:'120px 40px 40px', gap:'28px', bg:'transparent', bt:'none', br:'0', tf:'52px' };
+    const zp = fIdx >= 0 ? this.photos[fIdx] : null;
+    return {
+      zoomOpen: !!(this.state.zoom && zp && zp.src), zoomSrc: zp ? zp.src || '' : '', zoomTitle: zp ? zp.title : '', zoomRef:this.zoomRef,
+      openZoom:this.openZoom, closeZoom:() => this.setState({ zoom:false }), zoomIn:() => this.zBy(1.5), zoomOut:() => this.zBy(1/1.5),
+      zoomFit:() => { this.zv = { s:1, x:0, y:0 }; const img = this._zEl && this._zEl.querySelector('[data-zimg]'); if (img) img.style.transition = 'transform .25s cubic-bezier(.22,1,.36,1)'; this.zApply(); },
+      ...(() => {
+        const { phase, shut, flash } = this.state;
+        return {
+          loaderOp: phase === 'loading' ? 1 : 0, loaderPe: phase === 'loading' ? 'auto' : 'none',
+          introOp: phase === 'archive' ? 0 : 1, introPe: phase === 'intro' ? 'auto' : 'none',
+          introTr: phase === 'archive' ? 'none' : 'opacity .25s ease',
+          curTop: shut ? 'translateY(0)' : 'translateY(-101%)', curBot: shut ? 'translateY(0)' : 'translateY(101%)',
+          curTr: shut ? 'transform .2s cubic-bezier(.6,0,.9,.4)' : 'transform .55s cubic-bezier(.2,.8,.2,1)',
+          flashOp: flash, flashTr: flash ? 'none' : 'opacity .9s ease',
+          fireAll: () => this.fire(),
+          film: Array.from({ length:36 }, (_, i) => ({ i })),
+          enterCats: CATS.map((k, i) => ({ label:k.name, count:total(k), go:() => this.fire(() => this.goCat(i)) })),
+        };
+      })(),
+      camHost:this.camHost, tipRef:this.tipRef, progRef:this.progRef, expRef:this.expRef, filmRef:this.filmRef, worldRef:this.worldRef,
+      toStudio:() => this.toStudio(), _v: SFX.setVol(this.props.sfxVolume ?? .6),
+      soundLabel: SFX.on ? 'SOUND ON' : 'SOUND OFF', soundDot: SFX.on ? 'oklch(0.66 0.2 25)' : '#5a534a',
+      toggleSound:() => { SFX.toggle(); this.forceUpdate(); },
+      tagGroups, matchText, filt, tagsOpen, tagsLabel: tagsOpen ? '× HIDE TAGS' : '# TAGS',
+      showTags: tagsOpen && !focus, tagsBtnOp: focus ? 0 : 1,
+      toggleTags:() => this.setState(s => ({ tagsOpen:!s.tagsOpen }), () => { if (!this.state.focus) { if (this.hasSel(this.state.sel)) this.applyFilter(this.state.sel); else if (this.state.active !== null) this.goCol(this.state.active); else if (this.state.cat !== null) this.goCat(this.state.cat); else this.overview(); } }),
+      clearTags:() => this.overview(),
+      tabBar, rootRef:this.rootRef, onDown:this.onDown, photos, regions, islands, nav, subnav, hasSub: !!subCat, mini, fp, hasFocus: !!focus,
+      worldTf:`translate(${pan.x}px,${pan.y}px) scale(${z})`,
+      worldTr: anim ? 'transform 1s cubic-bezier(.2,.8,.2,1)' : 'none',
+      cursor: dragging ? 'grabbing' : 'grab',
+      navOp: focus ? 0 : 1, navPe: focus ? 'none' : 'auto',
+      showHints, fpS, fpRef:this.fpRef, studioLabel: sm ? 'STUDIO' : 'BACK TO THE STUDIO',
+      hintZoom: touch ? 'PINCH TO ZOOM' : 'SCROLL TO ZOOM', hintClick: touch ? 'TAP A PRINT' : 'CLICK A PRINT', hintPrint: touch ? 'TAP A PRINT ON THE LINE' : 'CLICK A PRINT ON THE LINE',
+      tipLabel: touch ? 'TAP TO SHOOT' : 'CLICK TO SHOOT', introHints: vw >= 640, closeLabel: touch ? 'Close' : 'Close · Esc',
+      zoomHint: sm ? '' : touch ? 'PINCH TO ZOOM · DRAG TO PAN · TAP TO ZOOM IN' : 'SCROLL OR PINCH TO ZOOM · DRAG TO PAN · DOUBLE-CLICK',
+      miniOp: hideMini ? 0 : 1, miniPe: hideMini ? 'none' : 'auto',
+      frameBg: 'transparent', framePad: '0',
+      prev:() => this.step(-1), next:() => this.step(1), close:() => this.close(),
+      miniClick: e => { const r = e.currentTarget.getBoundingClientRect();
+        this.camTo((e.clientX-r.left)/ms+B.x0, (e.clientY-r.top)/ms+B.y0, Math.max(z,.4)); },
+    };
+  }
+}
+</script>
+</body>
+</html>
