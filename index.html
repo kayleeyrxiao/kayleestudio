@@ -439,6 +439,11 @@ const SFX = (() => {
 
 function rng(seed){ let s = seed; return () => { s = (s*9301+49297)%233280; return s/233280; }; }
 const webOf = src => src && src.startsWith('photos/') ? src.replace(/^photos\//, 'thumbs/').replace(/\.\w+$/, '.webp') : src;
+// Phone memory: small previews when zoomed out, ≤2400px copies for full-size view on touch devices.
+const miniOf = src => src && src.startsWith('photos/') ? src.replace(/^photos\//, 'minis/').replace(/\.\w+$/, '.webp') : src;
+const LARGE = new Set(["photos/beijing-digital/01.jpg", "photos/cancun-film/01.jpg", "photos/cancun-film/02.jpeg", "photos/changsha-digital/01.jpg", "photos/dali-digital/01.jpeg", "photos/la-digital/01.jpg", "photos/la-digital/02.jpg", "photos/la-digital/03.jpg", "photos/la-digital/04.jpg", "photos/la-digital/05.jpg", "photos/la-digital/06.jpg", "photos/macau-digital/01.jpg", "photos/macau-digital/02.jpg", "photos/mongolia-digital/01.jpg", "photos/mongolia-digital/02.jpg", "photos/nyc-digital/01.jpg", "photos/nyc-digital/02.jpg", "photos/nyc-digital/03.jpg", "photos/nyc-digital/04.jpg", "photos/nyc-digital/05.jpg", "photos/nyc-digital/06.jpg", "photos/nyc-digital/07.jpg", "photos/nyc-digital/08.jpg", "photos/nyc-digital/09.jpg", "photos/nyc-digital/10.jpg", "photos/nyc-digital/11.jpg", "photos/nyc-digital/12.jpg", "photos/nyc-digital/13.jpg", "photos/nyc-digital/14.jpeg", "photos/nyc-digital/15.jpg", "photos/nyc-digital/16.jpg", "photos/nyc-digital/17.jpg", "photos/nyc-digital/19.jpg", "photos/nyc-digital/20.jpg", "photos/nyc-digital/21.jpeg", "photos/nyc-film/01.jpg", "photos/nyc-film/02.jpg", "photos/nyc-film/03.jpg", "photos/orlando-digital/01.jpeg", "photos/shanghai-digital/01.jpg", "photos/shanghai-digital/02.jpg", "photos/shenzhen-digital/03.jpg", "photos/wuhan-digital/01.jpg", "photos/wuhan-digital/02.jpg", "photos/xinjiang-film/01.jpg", "photos/xinjiang-film/02.jpg", "photos/xinjiang-film/03.jpg", "photos/xinjiang-film/04.jpg", "photos/xinjiang-film/05.jpg", "photos/xinjiang-film/06.jpg", "photos/xinjiang-film/07.jpg", "photos/xinjiang-film/08.jpg"]);
+const largeOf = src => LARGE.has(src) ? src.replace(/^photos\//, 'large/').replace(/\.\w+$/, '.webp') : src;
+const TOUCH = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
 
 class Component extends DCLogic {
   constructor(p){
@@ -857,10 +862,10 @@ class Component extends DCLogic {
       }
       rT = r1;
     };
-    this.three = { zoom: zoomAt, press: () => { press = 1; flashT = 1; }, reset: () => { extra = 1.6; rT = null; Ft.copy(T); tgt.copy(T); if (!this.raf) loop(); } };
+    this.three = { zoom: zoomAt, press: () => { press = 1; flashT = 1; }, reset: () => { extra = 1.6; rT = null; Ft.copy(T); tgt.copy(T); if (!this.raf) { if (TOUCH) resize(); loop(); } } };
     const loop = () => {
       const phase = this.state.phase;
-      if (phase === 'archive') { this.raf = 0; return; }
+      if (phase === 'archive') { this.raf = 0; if (TOUCH) renderer.setSize(1, 1); return; }
       this.raf = requestAnimationFrame(loop);
       const t = (performance.now()-t0)/1000;
       if (!drag) { vth *= .92; vph *= .88; th = Math.max(-1.1, Math.min(1.3, th+vth)); ph = Math.max(.8, Math.min(1.48, ph+vph)); }
@@ -901,9 +906,9 @@ class Component extends DCLogic {
   getView(){ return this.pending || this.lastV || { pan:this.state.pan, z:this.state.z }; }
   syncHi(){ const f = this.state.focus;
     if (this._hiId === f) return;
-    const old = this._hiEl; if (old) { old.style.opacity = '0'; setTimeout(() => old.remove(), 300); this._hiEl = null; }
+    const old = this._hiEl; if (old) { old.style.opacity = '0'; setTimeout(() => { old.remove(); old.removeAttribute('src'); }, 300); this._hiEl = null; }
     this._hiId = f; const p = f != null && this.photos.find(q => q.id === f);
-    if (!p || !p.src) return;
+    if (!p || !p.src || TOUCH) return;
     const hi = new Image(); hi.alt = ''; hi.draggable = false;
     hi.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;pointer-events:none;opacity:0;transition:opacity .3s ease;';
     hi.src = p.src;
@@ -911,7 +916,9 @@ class Component extends DCLogic {
       if (this._hiId !== f) return; const base = (this._imgEls || {})[f]; if (!base || !base.parentNode) return;
       base.parentNode.appendChild(hi); this._hiEl = hi; requestAnimationFrame(() => { hi.style.opacity = '1'; });
     }).catch(() => {}); }
-  componentDidUpdate(){ this.syncHi(); if (this.lastV && this.state.pan === this.lastV.pan) this.lastV = null;
+  componentDidUpdate(){ this.syncHi();
+    const ie = this._imgEls || {}, ts = this._tsrc || {}; for (const id in ie) { const el = ie[id]; if (el && ts[id] && el.getAttribute('src') !== ts[id]) el.src = ts[id]; }
+    if (this.lastV && this.state.pan === this.lastV.pan) this.lastV = null;
     if (this._zEl) { const img = this._zEl.querySelector('[data-zimg]'); if (img && img.dataset.src && img.getAttribute('src') !== img.dataset.src) this.zApply(); }
     const fe = this.fpRef.current; if (fe && this.state.vw < 900) { const sh = fe.offsetHeight; if (Math.abs(sh - (this.state.sheetH || 0)) > 2) this.setState({ sheetH:sh }); } }
   applyView(v){ const w = this.worldRef.current; if (w) { w.style.transition = 'none'; w.style.willChange = 'transform'; w.style.transform = `translate(${v.pan.x}px,${v.pan.y}px) scale(${v.z})`; }
@@ -1019,7 +1026,7 @@ class Component extends DCLogic {
 
   openZoom = () => this.setState({ zoom:true });
   _preload(){
-    const q = this.photos.filter(p => p.src).map(p => webOf(p.src));
+    const q = this.photos.filter(p => p.src).map(p => miniOf(p.src));
     const idle = window.requestIdleCallback || (f => setTimeout(f, 120));
     const next = () => { if (!q.length || this._dead) return; const src = q.shift();
       fetch(src, { priority:'low' }).then(r => r.blob()).catch(() => {}).then(() => idle(next)); };
@@ -1096,10 +1103,11 @@ class Component extends DCLogic {
         } else { op = .05; }
       }
       const seen = this._seen || (this._seen = new Set());
-      const showImg = !!p.src && live && (seen.has(p.id) || p.id === focus || (op > .1 && onScreen(x, y, p.w*s, p.h*s)));
+      const showImg = !!p.src && live && ((!TOUCH && seen.has(p.id)) || p.id === focus || (op > .1 && onScreen(x, y, p.w*s, p.h*s)));
       if (showImg) seen.add(p.id);
       const rc = this._imgRefs || (this._imgRefs = {});
-      const imgRef = rc[p.id] || (rc[p.id] = el => { const ie = this._imgEls || (this._imgEls = {}); ie[p.id] = el; const u = webOf(p.src); if (el && u && el.getAttribute('src') !== u) el.src = u; });
+      const ts = this._tsrc || (this._tsrc = {}); ts[p.id] = p.src ? (p.id === focus || p.w*s*z*(window.devicePixelRatio || 1) > 440 ? webOf(p.src) : miniOf(p.src)) : '';
+      const imgRef = rc[p.id] || (rc[p.id] = el => { const ie = this._imgEls || (this._imgEls = {}); if (el) ie[p.id] = el; else delete ie[p.id]; const u = (this._tsrc || {})[p.id] || miniOf(p.src); if (el && u && el.getAttribute('src') !== u) el.src = u; });
       return { imgRef, zoom: p.id === focus ? this.openZoom : undefined, id:p.id, slot:'photo-'+p.id, ph:p.title, src:p.src || '', bg: p.src ? `url("${p.src}")` : 'none', showImg, noSrc:!p.src, title:p.title, code:`${COLS[p.ci].id.toUpperCase()}-${String(p.i+1).padStart(2,'0')}`,
         ar:p.ar, w:p.w, tf:`translate(${x}px,${y}px) rotate(${rot}deg) scale(${s})`, op, zi, filter, pe: p.id === focus ? 'auto' : 'none' };
     });
@@ -1142,7 +1150,7 @@ class Component extends DCLogic {
       : { top:'0', left:'auto', w:'min(360px,34vw)', mh:'none', pad:'120px 40px 40px', gap:'28px', bg:'transparent', bt:'none', br:'0', tf:'52px' };
     const zp = fIdx >= 0 ? this.photos[fIdx] : null;
     return {
-      zoomOpen: !!(this.state.zoom && zp && zp.src), zoomSrc: zp ? zp.src || '' : '', zoomTitle: zp ? zp.title : '', zoomRef:this.zoomRef,
+      zoomOpen: !!(this.state.zoom && zp && zp.src), zoomSrc: zp ? (TOUCH ? largeOf(zp.src) : zp.src) || '' : '', zoomTitle: zp ? zp.title : '', zoomRef:this.zoomRef,
       openZoom:this.openZoom, closeZoom:() => this.setState({ zoom:false }), zoomIn:() => this.zBy(1.5), zoomOut:() => this.zBy(1/1.5),
       zoomFit:() => { this.zv = { s:1, x:0, y:0 }; const img = this._zEl && this._zEl.querySelector('[data-zimg]'); if (img) img.style.transition = 'transform .25s cubic-bezier(.22,1,.36,1)'; this.zApply(); },
       ...(() => {

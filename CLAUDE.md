@@ -1,0 +1,1 @@
+- Never crop, reframe, resize, or recompress the user's photos. Use the original files at their original size and aspect ratio (object-fit: contain, frame aspect = the photo's real width/height).
