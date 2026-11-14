@@ -39,7 +39,7 @@ a{color:#ece8e1;text-decoration:underline;}a:hover{color:oklch(0.66 0.2 25);}
       </div>
     </sc-for>
     <sc-for list="{{ photos }}" as="p" hint-placeholder-count="12">
-      <div data-pid="{{ p.id }}" style="position:absolute;left:0;top:0;width:{{ p.w }}px;transform:{{ p.tf }};transform-origin:0 0;backface-visibility:hidden;opacity:{{ p.op }};z-index:{{ p.zi }};transition:transform .8s cubic-bezier(.22,1,.36,1),opacity .5s;cursor:pointer;">
+      <div data-pid="{{ p.id }}" style="position:absolute;left:0;top:0;width:{{ p.w }}px;transform:{{ p.tf }};transform-origin:0 0;backface-visibility:{{ cardBf }};opacity:{{ p.op }};z-index:{{ p.zi }};transition:{{ cardTr }};cursor:pointer;">
         <div style="background:{{ frameBg }};padding:{{ framePad }};box-shadow:0 8px 0 rgba(0,0,0,.25);">
           <div style="position:relative;width:100%;aspect-ratio:{{ p.ar }};background:#2a2622;pointer-events:{{ p.pe }};">
             <sc-if value="{{ p.showImg }}" hint-placeholder-val="{{ false }}"><img ref="{{ p.imgRef }}" alt="{{ p.title }}" decoding="async" draggable="false" onClick="{{ p.zoom }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;cursor:zoom-in;"></sc-if>
@@ -828,15 +828,27 @@ class Component extends DCLogic {
     const pick = e => { const r = el.getBoundingClientRect(); ptr.set((e.clientX-r.left)/r.width*2-1, -(e.clientY-r.top)/r.height*2+1);
       ray.setFromCamera(ptr, view); const hit = ray.intersectObjects([g, ...prints.map(p => p.m)], true)[0]; if (!hit) return null;
       return hit.object.userData.cat !== undefined ? hit.object.userData.cat : 'cam'; };
+    const tps = new Map(); let pinchD = 0;
+    const tpEnd = ev => { tps.delete(ev.pointerId); if (tps.size < 2) pinchD = 0; };
+    addEventListener('pointerup', tpEnd); addEventListener('pointercancel', tpEnd);
+    el.addEventListener('gesturestart', ev => ev.preventDefault());
     el.addEventListener('pointerdown', e => {
+      tps.set(e.pointerId, [e.clientX, e.clientY]);
+      if (tps.size === 2) { const [a, b] = [...tps.values()]; pinchD = Math.hypot(a[0]-b[0], a[1]-b[1]); vth = 0; vph = 0; return; }
+      if (tps.size > 2) return;
       const x0 = e.clientX, y0 = e.clientY; let px = x0, py = y0, moved = false; drag = true; el.style.cursor = 'grabbing';
-      const mv = ev => { const dx = ev.clientX-px, dy = ev.clientY-py; px = ev.clientX; py = ev.clientY;
+      const mv = ev => { if (tps.has(ev.pointerId)) tps.set(ev.pointerId, [ev.clientX, ev.clientY]);
+        if (tps.size >= 2) { moved = true; if (!pinchD) return; const [a, b] = [...tps.values()], d = Math.hypot(a[0]-b[0], a[1]-b[1]);
+          if (d > 0) { this.three.zoom(-Math.log(d/pinchD)/.0014, { clientX:(a[0]+b[0])/2, clientY:(a[1]+b[1])/2 }); pinchD = d; } return; }
+        if (ev.pointerId !== e.pointerId) return;
+        const dx = ev.clientX-px, dy = ev.clientY-py; px = ev.clientX; py = ev.clientY;
         if (Math.hypot(ev.clientX-x0, ev.clientY-y0) > 4) moved = true;
         vth = -dx*.004; vph = -dy*.003; th = Math.max(-1.1, Math.min(1.3, th+vth)); ph = Math.max(.8, Math.min(1.48, ph+vph)); };
-      const upF = ev => { removeEventListener('pointermove', mv); removeEventListener('pointerup', upF); drag = false; el.style.cursor = 'grab';
+      const upF = ev => { if (ev.pointerId !== e.pointerId) return; removeEventListener('pointermove', mv); removeEventListener('pointerup', upF); removeEventListener('pointercancel', upF); drag = false; el.style.cursor = 'grab';
+        if (ev.type === 'pointercancel') return;
         if (moved) return; const hit = pick(ev);
         if (hit === 'cam') this.fire(); else if (hit !== null) this.fire(() => this.goCat(hit)); };
-      addEventListener('pointermove', mv); addEventListener('pointerup', upF);
+      addEventListener('pointermove', mv); addEventListener('pointerup', upF); addEventListener('pointercancel', upF);
     });
     el.addEventListener('pointermove', e => { if (drag) return; const h = pick(e); if (h !== hover && h !== null) { SFX.unlock(); h === 'cam' ? SFX.tick() : SFX.hoverPrint(); } hover = h; el.style.cursor = hover !== null ? 'pointer' : 'grab'; });
     const resize = () => { const W = host.clientWidth, H = host.clientHeight; renderer.setSize(W,H); view.aspect = W/H; view.updateProjectionMatrix();
@@ -1167,6 +1179,7 @@ class Component extends DCLogic {
           enterCats: CATS.map((k, i) => ({ label:k.name, count:total(k), go:() => this.fire(() => this.goCat(i)) })),
         };
       })(),
+      cardTr: TOUCH ? 'transform .8s cubic-bezier(.22,1,.36,1)' : 'transform .8s cubic-bezier(.22,1,.36,1),opacity .5s', cardBf: TOUCH ? 'visible' : 'hidden',
       camHost:this.camHost, tipRef:this.tipRef, progRef:this.progRef, expRef:this.expRef, filmRef:this.filmRef, worldRef:this.worldRef,
       toStudio:() => this.toStudio(), _v: SFX.setVol(this.props.sfxVolume ?? .6),
       soundLabel: SFX.on ? 'SOUND ON' : 'SOUND OFF', soundDot: SFX.on ? 'oklch(0.66 0.2 25)' : '#5a534a',
